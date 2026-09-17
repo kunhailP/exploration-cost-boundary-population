@@ -58,24 +58,21 @@
 \maketitle
 
 \begin{abstract}
-Adaptive assignment policies that increasingly favor one action, such as
-softmax policies over reward-model scores, produce logs whose value for causal
-inference depends on the effect being estimated. We price learning by
-exploration loss: the cumulative value, measured in the deployer's own
-objective, forgone whenever a non-preferred action is logged. In a model with
-a one-dimensional score, Gaussian outcomes and Lipschitz mean functions, logs
-from one shrinking temperature yield Wald intervals for the effect at the
-policy's decision boundary that are asymptotically valid uniformly over the
-model, while exploration loss tends to zero. In the same model, no design and
-estimator can estimate the population average effect uniformly consistently
-unless worst-case exploration loss diverges. The separation relies on the
-operational cost vanishing at the boundary; with a fixed cost per deviation,
-boundary inference under this design also incurs divergent loss. Without smoothness
-restrictions, uniform precision for the population effect requires loss that,
-as the target error shrinks, is of the order of the squared mean root gap
-divided by the squared error, independent of sample size. A single common
-temperature needs loss growing almost linearly in the sample size, whereas
-uniform mixing keeps it bounded.
+Many deployed systems assign actions with a known policy that becomes more
+decisive over time, for example a softmax over reward-model scores with a falling
+temperature. We ask which causal effects the resulting logs can deliver and what it
+costs to learn them. Cost is measured by exploration loss, the value the deployer
+gives up, in its own objective, each time the logged action is not the preferred
+one. In a model with a one-dimensional score, Gaussian outcomes and Lipschitz mean
+functions, a single shrinking temperature yields Wald intervals for the effect at
+the decision boundary that are asymptotically valid uniformly over the model, and
+the exploration loss goes to zero. In the same model, uniformly consistent
+estimation of the population average effect requires the worst-case loss to
+diverge, whatever the design and estimator. This contrast needs an operational cost
+that vanishes at the boundary. When the mean functions are only bounded, a given
+precision for the population effect needs loss of order the squared mean root gap
+divided by the squared error, however large the sample. A common temperature needs
+loss growing almost linearly in the sample size; uniform mixing keeps it bounded.
 \end{abstract}
 
 \noindent\textbf{Keywords:} adaptive experiments, limited overlap, regression
@@ -86,188 +83,137 @@ discontinuity, minimax lower bounds, generative AI, off-policy evaluation
 %=============================================================================
 \section{Introduction}\label{sec:intro}
 
-Many deployed systems choose actions with a policy that becomes more decisive
-as it gains confidence: bandit algorithms, recommender and ranking systems,
-algorithmic eligibility rules, and conversational AI systems that select a
-response strategy through a softmax over reward-model scores. Their logs record
-the action taken and often its probability. When such a policy is known and
-increasingly deterministic, which causal effects can the logs deliver, and
-what must be paid to learn the others?
+Many systems in use today choose actions with a policy that grows more decisive as
+it gains confidence. Bandit algorithms work this way, as do ranking systems,
+algorithmic eligibility rules and conversational AI systems that pick a response
+strategy through a softmax over reward-model scores. Their logs record the action
+and usually the probability with which it was taken. This paper asks what such logs
+can tell us about causal effects when the policy is known and close to
+deterministic, and what it costs to learn more.
 
-Conversational AI makes the question concrete. Conversations with large language
-models change political attitudes \cite{salvi2025conversational,hackenburg2025levers},
-and the strategies such systems use, such as presenting evidence or asking a
-question, are chosen adaptively. Regulation and replication concern the effects
-of these strategies, and the logs of deployed systems are the evidence an
-analyst inherits.
+Political persuasion by language models is a case in point. Conversations with these
+models move political attitudes \cite{salvi2025conversational,hackenburg2025levers},
+and the strategy a model uses, say presenting evidence or asking a question, is
+itself chosen adaptively. Researchers and regulators who want to know what these
+strategies do will often have only the deployment logs to work with.
 
-The answer depends on the target. We distinguish two:
-\begin{itemize}[leftmargin=1.5em,itemsep=2pt]
-\item the \emph{boundary effect}, the effect among contexts where the policy is
-indifferent between the two actions; and
-\item the \emph{population average effect} over all contexts the deployment
-serves.
-\end{itemize}
-The first is the effect for units at the margin of the current policy, the
-quantity that governs small changes to the policy's threshold, in the spirit of
-marginal policy-relevant treatment effects \cite{carneiro2010evaluating}; the
-second is the average outcome change from assigning one action rather than the
-other across the whole context population. Estimating one well does not
-substitute for estimating the other.
+Two targets have to be kept apart. The \emph{boundary effect} is the effect among
+contexts where the policy is indifferent between the two actions. It describes units
+at the margin of the current policy and governs small shifts in the policy's
+threshold, much like the marginal policy-relevant treatment effect of Carneiro,
+Heckman and Vytlacil \cite{carneiro2010evaluating}. The \emph{population average
+effect} is the effect of assigning one action instead of the other across every
+context the system serves. Knowing one well says little about the other.
 
-We price learning in the deployer's own currency. Each time the logged action
-differs from the one the deployer's objective prefers, the deployer gives up an
-operational value gap $g(h)$; the cumulative sum is the \emph{exploration loss}
-$R_n$. For a system that chooses by a score, the natural cost of an exploratory
-action is the score difference it forgoes: small where the policy is nearly
-indifferent, large where it is confident. This cost is defined by the deployer's
-objective rather than by the outcome under study, so it can be computed at the
-design stage.
+We measure the cost of learning in the deployer's own terms. Whenever the logged
+action differs from the one its objective prefers, the deployer loses an operational
+value gap $g(h)$, and we call the running total the \emph{exploration loss} $R_n$.
+For a system that acts on a score, the obvious gap is the score difference, which is
+small where the policy is nearly indifferent and large where it is confident. Since
+$g$ comes from the deployer's objective rather than from the outcome under study, it
+is known when the design is chosen.
 
-This paper gives lower bounds stated in exploration loss that hold for every
-estimator and every, possibly adaptive, design, and pairs them with boundary
-inference in the same model. The combination shows that, under one sharpening
-temperature, the boundary effect admits valid inference while cumulative
-exploration loss tends to zero, whereas the population effect cannot be learned
-uniformly without divergent loss. Its ingredients are familiar, namely limited
-overlap, local randomization near a threshold and cost-weighted allocation; the
-contribution is to place both targets in one model on one cost scale, and to
-make precise when the separation fails. It depends on the cost vanishing at the
-boundary: if every deviation carries a fixed cost, boundary inference under a
-common temperature also incurs divergent loss (Proposition~\ref{prop:gapshape}).
+Our main result is that the two targets have very different prices. With a single
+temperature that shrinks at a suitable rate, the boundary effect can be estimated
+with valid confidence intervals while the exploration loss goes to zero. In the same
+model, no design and no estimator learn the population effect uniformly unless the
+worst-case loss diverges. The ingredients are familiar: limited overlap, local
+randomization at a threshold and cost-weighted allocation have all been studied.
+What is new is that both targets are treated in one model and on one cost scale,
+with lower bounds that hold for every estimator and every adaptive design. The
+contrast depends on a cost that vanishes at the boundary. If each deviation costs a
+fixed amount, boundary inference under a common temperature is expensive as well
+(Proposition~\ref{prop:gapshape}).
 
-Figure~\ref{fig:separation} shows the construction behind the population-side
-lower bound. Two outcome models agree near the boundary and differ only for the
-unpreferred action away from it; a sharpening policy almost never takes that
-action there.
+Figure~\ref{fig:separation} shows the construction behind the lower bound. The two
+outcome models agree near the boundary and differ only for the unpreferred action
+further away, which a sharpening policy almost never takes.
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=\textwidth]{figs/fig1_mechanism.pdf}
-\caption{The separation construction, with $H\sim U(-1,1)$, $g(h)=|h|$,
-$u_1=0.35$, $u_2=0.85$ and $t=1$ (Theorem~\ref{thm:separation}, Model I is
-$\mu^0$ and Model II is $\mu^{t}$). Left: the two effect functions have the same
-boundary effect, zero, but population effects $0$ and $0.125$; the mean of the
-preferred action is the same in both models. Right: the probability of the
-unpreferred action under three temperatures. Shading marks the region in which
-the models differ. The curves are exact functions of the construction, not
-estimates.}
+\caption{Construction behind Theorem~\ref{thm:separation} (Model I is $\mu^0$,
+Model II is $\mu^t$), with $H\sim U(-1,1)$, $g(h)=|h|$, $u_1=0.35$, $u_2=0.85$ and
+$t=1$. Left: effect functions. Both boundary effects are zero; the population
+effects are $0$ and $0.125$. Right: probability of the unpreferred action at three
+temperatures. The models differ only in the shaded region.}
 \label{fig:separation}
 \end{figure}
 
-\paragraph{Contributions.}
-\begin{enumerate}[leftmargin=1.5em,itemsep=3pt]
-\item \emph{Separation in one model} (Theorems~\ref{thm:boundary}
-and~\ref{thm:separation}). With Gaussian outcomes and globally Lipschitz mean
-functions, a common temperature $\tau_n=n^{-\zeta}$, $\zeta\in(1/2,1)$, gives
-Wald intervals for the boundary effect that are asymptotically valid uniformly
-over the model while $R_n\to0$; in the same model, uniformly consistent
-estimation of the population effect requires $\sup R_n\to\infty$, and there are
-two members with equal boundary effects that no estimator distinguishes when
-$R_n\to0$.
-\item \emph{An information--exploration inequality} (Theorem~\ref{thm:info})
-for all estimators and adaptive designs in the model of bounded mean functions,
-attained in order by a gap-based design (Proposition~\ref{prop:achieve}).
-\item \emph{Consequences for design} (Section~\ref{sec:temperature}): one common
-temperature is costly for the population effect, while uniform mixing,
-context-dependent temperatures and suitable temperature mixtures are not; and
-the shape of the operational gap determines whether boundary inference is cheap
-(Proposition~\ref{prop:gapshape}).
-\end{enumerate}
+The paper makes three contributions. Theorems~\ref{thm:boundary}
+and~\ref{thm:separation} establish the separation in a model with Gaussian outcomes
+and globally Lipschitz mean functions. With $\tau_n=n^{-\zeta}$ and
+$\zeta\in(1/2,1)$, Wald intervals for the boundary effect are uniformly valid and
+$R_n\to0$, while uniformly consistent estimation of the population effect requires
+$\sup R_n\to\infty$. Theorem~\ref{thm:info} is an information--exploration
+inequality for all estimators and adaptive designs when the mean functions are only
+bounded, and Proposition~\ref{prop:achieve} shows that a gap-based design attains its
+order. Section~\ref{sec:temperature} turns to design. A single common temperature is
+costly for the population effect; uniform mixing, context-specific temperatures and
+some temperature mixtures are not.
 
-\paragraph{Scope.} All results concern one decision per unit, with independent
-contexts and a known assignment probability. The score $\Delta$ and the
-preferred action are fixed functions of the context: they are not learned from
-the outcomes, so ``adaptive'' refers to sharpening and to designs whose
-probabilities may depend on past data, not to a bandit that learns which action
-is better. The boundary results use a one-dimensional score. The lower bounds
-assume Gaussian outcomes with known variance and hold in models without
-extrapolation structure: where data near the boundary identify the population
-effect, as under a constant effect, the separation disappears. Multi-turn
-conversations, estimated or learned scores and effects of realized text are
-outside the formal results.
+Throughout, each unit receives one decision, contexts are independent and the
+assignment probabilities are known. The score and the preferred action are fixed
+functions of the context. By ``adaptive'' we mean sharpening, or designs that use
+past data, and not a bandit that learns from outcomes which action is better. Other
+limitations are collected in Section~\ref{sec:discussion}.
 
-\paragraph{Organization.} Section~\ref{sec:setup} sets out the model and
-Section~\ref{sec:brief} states the results informally.
-Sections~\ref{sec:boundary}--\ref{sec:separation} give boundary inference, the
-population lower bounds and the separation in one model;
-Section~\ref{sec:temperature} treats temperature as a design lever;
-Section~\ref{sec:sims} reports simulations; Section~\ref{sec:discussion}
-concludes. Proofs are in the appendix.
+The paper is organized as follows. Section~\ref{sec:setup} sets out the model and
+Section~\ref{sec:brief} previews the results. Sections~\ref{sec:boundary},
+\ref{sec:population} and~\ref{sec:separation} treat the boundary effect, the
+population effect and the separation. Section~\ref{sec:temperature} discusses
+temperature as a design choice, Section~\ref{sec:sims} reports simulations and
+Section~\ref{sec:discussion} concludes. Proofs are in the appendix.
 
-\paragraph{Relation to existing work.}
-\emph{Boundary estimands and local randomization.} Lee~\cite{lee2008randomized}
-interprets regression discontinuity as local randomization under imprecise
-control of the running variable. Abdulkadiro\u{g}lu et
+\paragraph{Related work.}
+The boundary result is closest to work that uses algorithmic or mechanism-based
+assignment as a source of local randomization. Lee~\cite{lee2008randomized} reads
+regression discontinuity as local randomization. Abdulkadiro\u{g}lu et
 al.~\cite{abdulkadiroglu2017research,abdulkadiroglu2022breaking} use propensity
-scores induced by assignment mechanisms, including local propensity scores near
+scores induced by school-assignment mechanisms, including local scores near
 tie-breaking cutoffs, and Narita and Yata~\cite{narita2021algorithm} show that
-overlap-type weights built from an approximate propensity score of a known
-algorithm converge to a boundary estimand and require undersmoothing; these are
-the closest antecedents for Theorem~\ref{thm:boundary}. There the smoothing is
-chosen by the analyst in covariate space; here it is a temperature chosen by the
-system in score space, and the exploration loss is computed jointly with the
-inferential guarantee. Eckles et al.~\cite{eckles2020noise} use known assignment
-noise near a cutoff with a fixed noise scale. Overlap weights and their target
-population are due to Li, Morgan and Zaslavsky~\cite{li2018balancing}, and
-Humphreys~\cite{humphreys2025bounds} shows that the fixed-effects estimand weights
-stratum effects by the assignment variance $p_j(1-p_j)$, the same weighting,
-which under a sharpening policy concentrates on the decision boundary.
+overlap-type weights built from an approximate propensity score of a known algorithm
+converge to a boundary estimand. In their work the analyst chooses how much to
+smooth. Here the system's temperature plays that role, and we keep track of the
+exploration loss that comes with it. Eckles et al.~\cite{eckles2020noise} exploit
+known assignment noise of fixed scale at a cutoff. Overlap weights go back to Li,
+Morgan and Zaslavsky~\cite{li2018balancing}, and Humphreys~\cite{humphreys2025bounds}
+shows that fixed-effects regression weights stratum effects by $p_j(1-p_j)$; under a
+sharpening policy almost all of that weight sits at the boundary.
 
-\emph{Exploration and estimation.} Trade-offs between reward and estimation error
-appear for multi-armed bandits in Erraqabi et al.~\cite{erraqabi2017trading} and
-Simchi-Levi and Wang~\cite{simchilevi2023multi}. In a non-contextual
-setting, Liang and Bojinov~\cite{liang2023mixture} mix any bandit algorithm with
-a Bernoulli design whose weight vanishes slowly, keeping anytime-valid inference
-on the average effect; our recommendation of uniform mixing has the same logic. Inference from adaptively collected
-data with vanishing propensities is treated by Hadad et
-al.~\cite{hadad2021confidence}; adaptive designs for treatment effects and for
-policy choice by Kato et al.~\cite{kato2020efficient} and Kasy and
-Sautmann~\cite{kasy2021adaptive}, with applications in political science
-reviewed by Offer-Westort, Coppock and Green~\cite{offerwestort2021adaptive}.
-Conservative bandits keep cumulative reward above a baseline
-policy's~\cite{wu2016conservative}, and Wan, Kveton and Song~\cite{wan2022safe}
-optimize exploration for policy evaluation under a value constraint. Tucker and
-Joachims~\cite{tucker2023variance} design logging policies that augment existing
-logs to reduce off-policy evaluation variance, and Douglas, Persson and
-Provost~\cite{douglas2026logging} derive optimal logging policies for
-inverse-propensity estimation and report that softmax logging performs worse than
-top-$k$ logging in simulation. Koppel et al.~\cite{koppel2025explore} extend
-inverse-gap-weighting contextual bandits to balance regret against the quality of
-average-treatment-effect estimates. The
-allocation $q\propto g^{-1/2}$ has the form of optimum stratified allocation with
-costs \cite{cochran1977sampling}, and Ravichandran et
-al.~\cite{ravichandran2024optimal} derive the analogous cost-weighted rule for
-factorial experiments. We do not claim the allocation as new; what we add is that
-the corresponding constant bounds every estimator and adaptive design when loss
-is paid only for non-preferred actions. Li and Imai~\cite{li2024neyman} compare
-evaluating an individualized treatment rule by randomizing units to the rule with
-evaluation from a standard experiment, without a cost for assignments against the
-rule. Cesa-Bianchi et al.~\cite{cesabianchi2017boltzmann} show that Boltzmann
-exploration with a common schedule can fail for regret; Theorem~\ref{thm:common}
-is an estimation counterpart.
+The tension between reward and estimation has mostly been studied for bandits
+without contexts~\cite{erraqabi2017trading,simchilevi2023multi}. Liang and
+Bojinov~\cite{liang2023mixture} mix any bandit algorithm with a Bernoulli design
+whose weight decays slowly, which keeps anytime-valid inference on the average
+effect; this is essentially the uniform mixing we recommend. Other work covers
+inference when propensities decay~\cite{hadad2021confidence}, adaptive designs for
+effect estimation and for policy choice~\cite{kato2020efficient,kasy2021adaptive},
+and their use in political science~\cite{offerwestort2021adaptive}. Closer to our
+notion of cost are conservative bandits~\cite{wu2016conservative}, safe exploration
+for policy evaluation~\cite{wan2022safe}, the design of logging policies for
+off-policy evaluation~\cite{tucker2023variance,douglas2026logging} and the balance
+between regret and effect estimation studied by Koppel et
+al.~\cite{koppel2025explore}. The allocation $q\propto g^{-1/2}$ is optimum
+stratified allocation with costs~\cite{cochran1977sampling} and appears for factorial
+experiments in~\cite{ravichandran2024optimal}; what we add is that its constant bounds
+every estimator and adaptive design. Li and Imai~\cite{li2024neyman} compare ways of
+evaluating an individualized rule without charging for departures from it, and
+Cesa-Bianchi et al.~\cite{cesabianchi2017boltzmann} show that Boltzmann exploration
+with one schedule can fail for regret. Theorem~\ref{thm:common} is an analogue for
+estimation.
 
-\emph{Limited overlap and off-policy evaluation.} Lower bounds for off-policy
-value estimation \cite{li2015toward,wang2017optimal,mou2023off} and limited-overlap
-asymptotics and trimming
-\cite{khan2010irregular,crump2009dealing,rothe2017robust,hong2020inference,ma2020robust}
-supply the information-theoretic ingredients; the collapse of inverse weighting
-under shrinking propensities is irregular identification in the sense of Khan and
-Tamer~\cite{khan2010irregular}. Ring and Schomaker~\cite{ring2026diagnostic}
-diagnose stochastic positivity problems and use the diagnosis to choose
-alternative estimands; our results give a formal counterpart for known,
-sharpening policies, stating which estimand remains learnable and at what cost.
-Khan, Saveski and Ugander~\cite{khan2024off} bound effects without overlap under
-smoothness, the kind of extrapolation structure our impossibility excludes.
-
-\emph{Generative treatments.} Athey, Imbens and Ji~\cite{athey2026stochastic}
-identify effects of content features from stochastic algorithms using logged
-unexposed candidates and probability ratios; their estimand averages over
-co-occurring pairs with trimming and does not conflict with our bounds. Fresh and
-Shin~\cite{fresh2026conversation} give a taxonomy of conversational estimands, and
-Imai and Nakamura~\cite{imai2026causal,nakamura2026dynamic} study effects of
-realized text features; we work at the level of strategy assignment with the
-generator held fixed.
+The lower bounds draw on off-policy evaluation~\cite{li2015toward,wang2017optimal,mou2023off}
+and on limited overlap and trimming
+\cite{khan2010irregular,crump2009dealing,rothe2017robust,hong2020inference,ma2020robust},
+in particular the irregular identification of Khan and Tamer~\cite{khan2010irregular}.
+Ring and Schomaker~\cite{ring2026diagnostic} use positivity diagnostics to choose
+alternative estimands, and Khan, Saveski and Ugander~\cite{khan2024off} bound effects
+without overlap by assuming smoothness, the kind of extrapolation our lower bounds
+rule out. For generative treatments, Athey, Imbens and Ji~\cite{athey2026stochastic}
+identify effects of content features from stochastic algorithms, Fresh and
+Shin~\cite{fresh2026conversation} classify conversational estimands, and Imai and
+Nakamura~\cite{imai2026causal,nakamura2026dynamic} study effects of realized text. We
+stay at the level of strategy assignment and hold the generator fixed.
 
 %=============================================================================
 \section{Setup}\label{sec:setup}
@@ -333,56 +279,43 @@ $\beta_{\ov,\tau}=\E[\omega_\tau(H)c(H)]/\E[\omega_\tau(H)]$, with
 $\omega_\tau=e_\tau(1-e_\tau)$ \cite{li2018balancing}, is an intermediate target.
 
 %=============================================================================
-\section{The result in brief}\label{sec:brief}
+\section{The results in brief}\label{sec:brief}
 
 Take $\Delta(h)=h$, Gaussian outcomes with variance $\sigma^2$, and mean functions
-bounded by $B$ and $L$-Lipschitz; call this model $\Mlip$. Let the logs come from
-one common temperature $\tau_n=n^{-\zeta}$ with $\zeta\in(1/2,1)$, and let the
-operational gap vanish linearly at the boundary.
+bounded by $B$ and $L$-Lipschitz; call this model $\Mlip$. Suppose the logs come from
+one common temperature $\tau_n=n^{-\zeta}$ with $\zeta\in(1/2,1)$ and that the
+operational gap vanishes linearly at the boundary. Then:
 \begin{enumerate}[label=(\roman*),leftmargin=2em,itemsep=2pt]
-\item The Wald interval for the boundary effect is asymptotically valid uniformly
-over $\Mlip$, and the exploration loss $R_n$ tends to zero
-(Theorems~\ref{thm:boundary} and~\ref{thm:separation}).
-\item In $\Mlip$, there exist two outcome laws with equal boundary effects and
-different population effects that differ only for the non-preferred action in a
-region where the operational gap is bounded below; no estimator is consistent for
-the population effect at both whenever $R_n\to0$. Uniformly consistent estimation
-of the population effect over $\Mlip$ requires divergent worst-case loss, for
-every design and estimator (Theorem~\ref{thm:separation}).
-\item In the larger model of all bounded mean functions, uniform precision
-$\delta$ for the population effect requires worst-case loss of order at least
-$(\E\sqrt g)^2/\delta^2$ as $\delta\to0$, and this order does not depend on $n$
-(Theorem~\ref{thm:info}).
+\item the Wald interval for the boundary effect is asymptotically valid uniformly
+over $\Mlip$, and $R_n\to0$ (Theorems~\ref{thm:boundary} and~\ref{thm:separation});
+\item $\Mlip$ contains two outcome laws with the same boundary effect and different
+population effects that differ only for the non-preferred action, in a region where
+the gap is bounded below. Once $R_n\to0$, no estimator is consistent for the
+population effect at both, and uniformly consistent estimation over $\Mlip$ requires
+divergent worst-case loss (Theorem~\ref{thm:separation});
+\item if the mean functions are only bounded, precision $\delta$ for the population
+effect requires worst-case loss of order at least $(\E\sqrt g)^2/\delta^2$ as
+$\delta\to0$, whatever the value of $n$ (Theorem~\ref{thm:info}).
 \end{enumerate}
-If instead every deviation carries a fixed cost, the loss in (i) diverges
-(Proposition~\ref{prop:gapshape}). Figure~\ref{fig:map} shows the separation for
-the simulation design of Section~\ref{sec:sims}. Under one common temperature the
-population effect reaches root mean squared error $\figDelta$ only where the
-exploration loss is large, at least about $\figPopMinLoss$ on the plotted grid,
-whereas the boundary effect reaches it with loss $\figBndMinLoss$ at the edge of
-the grid and with less at larger $n$.
+Figure~\ref{fig:map} shows what this looks like in the simulation design of
+Section~\ref{sec:sims}. Under one common temperature, the Horvitz--Thompson estimator
+of the population effect reaches root mean squared error $\figDelta$ only where the
+loss is at least about $\figPopMinLoss$ on the plotted grid. The boundary effect
+reaches the same precision with loss $\figBndMinLoss$ at the edge of the grid, and
+with less at larger $n$. Panel (a) describes a single estimator; the lower bounds for
+all estimators are Theorems~\ref{thm:info} and~\ref{thm:separation}.
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=\textwidth]{figs/fig2_separation_map.pdf}
-\caption{Root mean squared error ($\log_{10}$ scale) under one common temperature
-$\tau$, for $H\sim U(-1,1)$, $\Delta(h)=h$, $g(h)=|h|$, $c(h)=1+|h|$ and unit
-noise. (a) Exact root mean squared error of the Horvitz--Thompson estimator of
-$\theta$, computed by numerical integration. (b) First-order approximation
-$\{(\beta_{\ov,\tau}-\beta_0)^2+s_n^2/n\}^{1/2}$ to the root mean squared error of
-the estimator of Theorem~\ref{thm:boundary}, combining the overlap-target
-difference $\beta_{\ov,\tau}-\beta_0$ with the linearization variance $s_n^2$.
-Monte Carlo checks with \foReps{} replications, setting undefined estimates to
-zero as in Section~\ref{sec:boundary}, give ratios of Monte Carlo to approximate
-root mean squared error between \foRatioMin{} and \foRatioMax{} in the
-\foCells{} checked settings with $n\tau\ge3$, and \foRatioTiny{} at
-$n\tau=\foNtauTiny$, where \foUndefPct\% of estimates were undefined; the shaded
-region $n\tau<3$ marks this check's range, not a general accuracy threshold.
-White curves enclose root mean squared error at most $\figDelta$; dashed curves
-are levels of $R_n=n\E[g(H)q_\tau(H)]$; stars mark the smallest loss attaining
-the precision on the plotted grid ($1\le1/\tau\le300$, $10^2\le n\le10^9$).
-Panel (a) concerns one estimator under one outcome law; lower bounds for all
-estimators are Theorems~\ref{thm:info} and~\ref{thm:separation}.}
+\caption{Root mean squared error ($\log_{10}$ scale) under one common temperature,
+in the design of Section~\ref{sec:sims}. (a) Exact value for the Horvitz--Thompson
+estimator of $\theta$. (b) First-order approximation
+$\{(\beta_{\ov,\tau}-\beta_0)^2+s_n^2/n\}^{1/2}$ for the estimator of
+Theorem~\ref{thm:boundary}, checked by simulation in Section~\ref{sec:sims}. White
+curves enclose error at most $\figDelta$, dashed curves are levels of $R_n$, and stars
+mark the smallest loss reaching that precision on the grid. The approximation was
+not checked in the shaded region $n\tau<3$.}
 \label{fig:map}
 \end{figure}
 
@@ -438,22 +371,20 @@ In particular, for $\tau_n=n^{-\zeta}$ with $\zeta\in(1/2,1)$, the interval in
 (iv) is asymptotically valid and $R_n\to0$.
 \end{theorem}
 
-The three rate conditions are $n\tau_n\to\infty$ (the boundary sample grows,
-$\zeta<1$), $n\tau_n^3\to0$ (bias is negligible relative to the standard error,
-$\zeta>1/3$) and $n\tau_n^2\to0$ (the loss vanishes, $\zeta>1/2$). The error is
-$|\hat\beta-\beta_0|=O_p((n\tau_n)^{-1/2}+\tau_n)$; we do not claim this rate is
-optimal. With $\zeta=1/2$ the interval remains valid and the loss stays bounded.
-Differentiability of $c$ at zero does not improve the bias order in general: a
-bounded effect equal to $1+|h|^{3/2}$ near zero gives bias of order $\tau^{3/2}$.
-If $c$ is $C^{1,1}$ and $f$ is Lipschitz near zero, the bias is $O(\tau^2)$ and
-condition (iv) relaxes to $n\tau_n^5\to0$. Proofs are in
-Appendix~\ref{app:boundary}.
+The three rate conditions say that the boundary sample grows ($n\tau_n\to\infty$,
+$\zeta<1$), that the bias is small next to the standard error ($n\tau_n^3\to0$,
+$\zeta>1/3$) and that the loss vanishes ($n\tau_n^2\to0$, $\zeta>1/2$). At
+$\zeta=1/2$ the interval is still valid and the loss stays bounded. The error is
+$O_p((n\tau_n)^{-1/2}+\tau_n)$; we have not tried to show that this rate is optimal.
+A smoother effect helps only with more structure. If $c$ is $C^{1,1}$ and $f$ is
+Lipschitz near zero, the bias is $O(\tau^2)$ and (iv) needs only $n\tau_n^5\to0$, but
+an effect equal to $1+|h|^{3/2}$ near zero, which is differentiable, still has bias
+of order $\tau^{3/2}$. Proofs are in Appendix~\ref{app:boundary}.
 
-Vanishing loss does not mean that exploration disappears. The expected number of
-non-preferred actions is $n\E[q_{\tau_n}(H)]=2\log2\,f(0)\,n\tau_n(1+o(1))$, which
-grows; the loss vanishes because these actions occur ever closer to the boundary,
-where the operational gap is small. The next result makes the role of the gap's
-shape explicit.
+Exploration continues even as the loss vanishes. The expected number of non-preferred
+actions, $n\E[q_{\tau_n}(H)]=2\log2\,f(0)\,n\tau_n(1+o(1))$, grows with $n$. The loss
+goes to zero because these actions happen ever closer to the boundary, where they
+cost little. How much they cost there depends on the shape of the gap.
 
 \begin{proposition}[Shape of the operational gap]\label{prop:gapshape}
 Let (D1) and (D4) hold and $g=\phi(|h|)\le\bar G$.
@@ -469,19 +400,19 @@ $n\tau_n\to\infty$, the condition under which Theorem~\ref{thm:boundary} applies
 \end{enumerate}
 \end{proposition}
 
-Part (b) covers any cost incurred per deviation irrespective of context, such as
-a review or a payment. Under such costs the cumulative loss of boundary inference
-under a common-temperature design also diverges, so the separation below, which
-contrasts vanishing and divergent loss, does not hold in this form. Part (b) does not
-compare the minimal costs of the two targets over all designs. The proof is in Appendix~\ref{app:boundary}.
+Part (b) applies to any cost charged per deviation regardless of context, such as a
+human review or a payment. With such costs the loss of boundary inference under a
+common temperature diverges too, and the contrast of Section~\ref{sec:separation}
+disappears. Part (b) concerns this design only; it does not compare the least
+possible costs of the two targets. The proof is in Appendix~\ref{app:boundary}.
 
 %=============================================================================
 \section{Population effects require paid exploration}\label{sec:population}
 
 Fix $B>0$ and $\sigma>0$. Let $\M(B,\sigma)$ be the model in which
 $Y\mid A=a,H=h$ is $N(\mu_a(h),\sigma^2)$ and $\mu_0,\mu_1$ are \emph{any}
-measurable functions bounded by $B$. The model contains no structure that carries
-effects learned near the boundary to other contexts.
+measurable functions bounded by $B$. Nothing in this model links effects near the
+boundary to effects elsewhere.
 
 \begin{theorem}[Information--exploration inequality]\label{thm:info}
 Let $S_1,\dots,S_J$ be disjoint sets with $f_j=F(S_j)>0$, each contained in
@@ -497,14 +428,14 @@ requires $\sup R_n\to\infty$; and if $\sup\E(\hat\theta-\theta)^2\le\delta_n^2\t
 then $\liminf_n\delta_n^2\sup R_n\ge\sigma^2(\E\sqrt{g(H)})^2$.
 \end{theorem}
 
-Neither side of \eqref{eq:info} involves $n$: deployment scale does not substitute
-for exploration when the target is the population effect. At a fixed precision
-$\delta$, \eqref{eq:info} gives
-$\sup R_n\ge\sigma^2(\sum_jf_j\sqrt{g_j})^2/\delta^2-\sigma^2\pi^2\sum_jg_j/B^2$,
-whose best value over partitions is at most $\sigma^2(\E\sqrt g)^2/\delta^2$;
-the constant $(\E\sqrt g)^2$ is reached only as $\delta\to0$. If $\sum_jg_j>0$, at
-$R_n=0$ the bound is the finite floor $B^2(\sum_jf_j\sqrt{g_j})^2/(\pi^2\sum_jg_j)$,
-consistent with the bounded error of a constant estimator.
+The sample size does not appear in \eqref{eq:info}, so a larger deployment does
+not make the population effect cheaper to learn. At a fixed precision $\delta$, the
+inequality gives
+$\sup R_n\ge\sigma^2(\sum_jf_j\sqrt{g_j})^2/\delta^2-\sigma^2\pi^2\sum_jg_j/B^2$.
+The best partition gives at most $\sigma^2(\E\sqrt g)^2/\delta^2$, and that constant
+is reached only as $\delta\to0$. At $R_n=0$ and $\sum_jg_j>0$ the bound is the finite
+floor $B^2(\sum_jf_j\sqrt{g_j})^2/(\pi^2\sum_jg_j)$, as it should be, since a
+constant estimator has bounded error.
 
 \begin{proposition}[Achievability]\label{prop:achieve}
 Suppose $0<\E\sqrt g<\infty$, $\delta_n>0$ and $n\delta_n^2\to\infty$. Write
@@ -530,18 +461,17 @@ $n\delta_n^2\ge4C$, has the same uniform risk guarantee and
 $R_n=Cn\E[g]/(n\delta_n^2-2C)=C\E[g]\delta_n^{-2}(1+o(1))$.
 \end{proposition}
 
-The order $\delta^{-2}$ and the functional $(\E\sqrt g)^2$ appear in both the
-lower bound and the attainable loss, but the constants differ: the lower bound has
-$\sigma^2$ and the Horvitz--Thompson upper bound $\sigma^2+B^2$, a factor that can
-be large when $B^2\gg\sigma^2$. We do not establish the optimal constant. Proofs are
-in Appendix~\ref{app:population}.
+The lower bound and the attainable loss share the order $\delta^{-2}$ and the
+functional $(\E\sqrt g)^2$. Their constants are $\sigma^2$ and $\sigma^2+B^2$, which
+can be far apart when $B^2\gg\sigma^2$, and we have not found the optimal one. Proofs
+are in Appendix~\ref{app:population}.
 
 %=============================================================================
 \section{The separation in one model}\label{sec:separation}
 
-Theorem~\ref{thm:info} is proved in $\M(B,\sigma)$, which is unrestricted away
-from the boundary. A lower bound over a large model does not transfer to a smaller
-one, so we state both sides in a model with global smoothness. Fix $F$ satisfying
+Theorem~\ref{thm:info} is proved in $\M(B,\sigma)$, which places no restriction
+away from the boundary. A lower bound in a large model says nothing about a smaller
+one, so we now work with a single model that is smooth everywhere. Fix $F$ satisfying
 (D1), $g=\phi(|h|)$ satisfying (D5), and $B,L,\sigma>0$. Let $\Mlip$ be the set of
 outcome laws with $Y\mid A=a,H=h\sim N(\mu_a(h),\sigma^2)$ and $\mu_0,\mu_1$ bounded
 by $B$ and $L$-Lipschitz on $\mathbb R$. Every member of $\Mlip$ satisfies (D2)
@@ -574,14 +504,14 @@ $\max_{t\in\{0,t_1\}}P_{\mu^t}(|\hat\theta_n-\theta(\mu^t)|\ge t_1\E[b]/2)\ge
 \end{enumerate}
 \end{theorem}
 
-Both sides are now uniform over the same model: (S1) gives boundary intervals whose
-coverage converges uniformly, and (S3) shows that uniform consistency for the
-population effect requires unbounded worst-case loss. (S2) adds a statement at two
-fixed members. Because $\theta\in[-2B,2B]$, uniform consistency in probability and
-in mean square are equivalent here after clipping an estimator to that interval.
-We do not claim that the constant of Theorem~\ref{thm:info} holds in $\Mlip$. If a
-submodel lets boundary data identify $\theta$, the perturbation family is excluded
-and (S2)--(S3) do not apply. Proofs are in Appendix~\ref{app:separation}.
+Both halves are now uniform over the same model. (S1) gives boundary intervals with
+uniformly correct coverage, (S3) shows that uniform consistency for the population
+effect needs unbounded worst-case loss, and (S2) makes the same point for two fixed
+members. Since $\theta\in[-2B,2B]$, an estimator can be clipped to that interval, so
+consistency in probability and in mean square are equivalent here. Whether the
+constant of Theorem~\ref{thm:info} holds in $\Mlip$ is open. In submodels where
+boundary data identify $\theta$ the perturbation family is not available, and (S2)
+and (S3) do not apply. Proofs are in Appendix~\ref{app:separation}.
 
 %=============================================================================
 \section{Temperature as an exploration device}\label{sec:temperature}
@@ -601,18 +531,17 @@ R_n\ \ge\ \underline\kappa f_{\min}c_*\,n\min\Big\{v_0^2,\ \frac{(D_{\max}-\epsi
 \]
 \end{theorem}
 
-This is a lower bound, and $\delta_n$ may be fixed. For fixed $\delta$ with
-$\delta^2\le\nu_\epsilon^2B^2/(2\pi^2)$, the common-temperature loss is at least of
-order $n/\log^2n$, whereas Proposition~\ref{prop:achieve} attains the same uniform
-precision with loss bounded in $n$. The precision condition cannot be dropped: for
-$\delta\ge2B$ the estimator that always outputs zero meets the target with no
-exploration. The theorem is stated in the unrestricted model $\M(B,\sigma)$; with
-extrapolation structure, such as a correctly specified parametric outcome model, a
-model-based estimator can do better. The reason for the cost is not that a common
-temperature explores in the wrong place, since the optimal design also explores most
-near the boundary; it is that the probability of the non-preferred action decays
-exponentially in $|\Delta|$, so observations far from the boundary become too rare
-unless the temperature is raised everywhere.
+The precision $\delta_n$ may be fixed. For fixed $\delta$ with
+$\delta^2\le\nu_\epsilon^2B^2/(2\pi^2)$, a common temperature needs loss of order at
+least $n/\log^2n$, while Proposition~\ref{prop:achieve} reaches the same precision with
+loss bounded in $n$. Some condition on $\delta$ is needed: for $\delta\ge2B$ the
+estimator that always returns zero meets the target without exploring. The theorem
+holds in $\M(B,\sigma)$; with a correctly specified parametric outcome model, a
+model-based estimator can do better. A common temperature explores most near the
+boundary, and so does the optimal design, so the location of exploration is not the
+issue. The issue is that the probability of the non-preferred action decays
+exponentially in $|\Delta|$. Confident contexts are then almost never explored unless
+the temperature is raised everywhere, which is expensive near the boundary.
 
 \begin{remark}[Mixtures of temperatures]\label{rem:mixture}
 Theorem~\ref{thm:common} does not extend to random mixtures of finite temperatures.
@@ -622,8 +551,8 @@ $w_n=\E[1/r(|H|)]/\{n\delta^2/(\sigma^2+B^2)-2\}$ and temperature $1/n$ otherwis
 The Horvitz--Thompson estimator then has uniform mean squared error at most
 $\delta^2$ over $\M(B,\sigma)$, and the loss is at most
 $(\sigma^2+B^2)\E[1/r]\E[|H|r]/\delta^2+O(1/n)$, bounded in $n$; at $\delta=0.1$ the
-factor $\E[1/r]\E[|H|r]/\delta^2$ equals \mixtureCost{}. The lesson concerns a single
-common temperature, not temperature as such.
+factor $\E[1/r]\E[|H|r]/\delta^2$ equals \mixtureCost{}. What is costly is one
+temperature shared by all contexts.
 \end{remark}
 
 \begin{proposition}[Context temperatures]\label{prop:ctx}
@@ -635,12 +564,11 @@ Proposition~\ref{prop:achieve} is implementable with temperatures in $(0,\infty]
 and for each $h$ with $\Delta(h)\neq0$ and $g(h)>0$, $\tau_n(h)\log(1/c_n)\to|\Delta(h)|$.
 \end{proposition}
 
-The limit is pointwise. Where the cap binds, for example $0<|h|\le4c_n^2$ when
-$g(h)=|h|$, the implementing temperature is $\tau=\infty$. When the gap is known
-only up to a multiplicative error, a Kantorovich bound (Lemma~\ref{lem:robust} in
-Appendix~\ref{app:temperature}) gives the worst-case cost of allocating by the
-misspecified gap relative to the correct one, in a limit of large inverse
-exploration moment. Proofs are in Appendix~\ref{app:temperature}.
+The limit holds for each $h$. Where the cap binds, for example $0<|h|\le4c_n^2$ when
+$g(h)=|h|$, the temperature is $\tau=\infty$. If the gap is known only up to a
+multiplicative error, Lemma~\ref{lem:robust} in Appendix~\ref{app:temperature} bounds
+the extra cost of allocating by the wrong gap. Proofs are in
+Appendix~\ref{app:temperature}.
 
 %=============================================================================
 \section{Simulations}\label{sec:sims}
@@ -650,35 +578,32 @@ $c(h)=1+|h|$ (population effect $1.5$, boundary effect $1$) and $N(0,1)$ noise.
 Code, seeds and result files are in the repository cited in the data availability
 statement.
 
-\paragraph{Exploration designs.} For allocation comparisons we match the
-sparse-exploration criterion $V_{\rm sp}(q)=\sigma^2\E[1/q]/n$, an allocation
-criterion rather than the mean squared error of any estimator. At $n=10^5$ and
-$V_{\rm sp}=0.01$, the closed-form exploration loss is \costUniform{} for uniform
-mixing, \costOptimal{} for the gap-based design $q\propto g^{-1/2}$ (calibrated to
-$V_{\rm sp}$ and capped at $1/2$, rather than the $c_n$ of
-Proposition~\ref{prop:achieve}), and \costCommon{} for a common temperature
-($\tau=\costCommonTau$), a ratio of \costRatioCommonUniform{} to uniform mixing
-(Figure~\ref{fig:costs}; Figure~\ref{fig:costs-small} in Appendix~\ref{app:figures}
-repeats it at $V_{\rm sp}=0.03^2$). Table~\ref{tab:designs} runs the augmented
-inverse-propensity estimator with a working model linear in $(1,H,|H|)$ separately
-in each arm, which is correctly specified for this design, on common random numbers
-across designs; the context-temperature implementation gives identical rows. At
-fixed $V_{\rm sp}$ the expected number of non-preferred actions stays bounded for
-uniform mixing and the gap-based design, so their nominal Wald coverage has no
-asymptotic justification as $n$ grows; this does not apply to the common
-temperature. In a two-context example with masses $(0.5,0.5)$, gaps $(0.2,1)$,
-$\sigma=1$, $B=5$ and $\delta=0.1$, the lower bound \eqref{eq:info} evaluates to
-\finiteBound{} against the asymptotic constant \finiteConstant{}, and the
-common-temperature loss has local growth exponent \finiteSlope{} against the
-predicted $1-\Delta_{\min}/\Delta_{\max}=0.8$.
+\paragraph{Exploration designs.} To compare allocations we hold fixed the
+sparse-exploration criterion $V_{\rm sp}(q)=\sigma^2\E[1/q]/n$. This is a criterion for
+allocation, not the mean squared error of a particular estimator. At $n=10^5$ and
+$V_{\rm sp}=0.01$ the exploration loss is \costUniform{} for uniform mixing,
+\costOptimal{} for the gap-based design $q\propto g^{-1/2}$ and \costCommon{} for a
+common temperature ($\tau=\costCommonTau$), about \costRatioCommonUniform{} times the
+loss of uniform mixing (Figure~\ref{fig:costs}; Figure~\ref{fig:costs-small} in
+Appendix~\ref{app:figures} repeats this at $V_{\rm sp}=0.03^2$). The gap-based design
+here is calibrated to $V_{\rm sp}$ and capped at $1/2$, rather than using the $c_n$ of
+Proposition~\ref{prop:achieve}. Table~\ref{tab:designs} runs the augmented
+inverse-propensity estimator on common random numbers, with a working model linear in
+$(1,H,|H|)$ in each arm, which is correct for this design. Implementing the gap-based
+design through context temperatures gives identical rows. Because $V_{\rm sp}$ is
+fixed, the expected number of non-preferred actions stays bounded for uniform mixing
+and the gap-based design, so the nominal coverage of their Wald intervals has no
+asymptotic justification as $n$ grows. In a two-context example with masses
+$(0.5,0.5)$, gaps $(0.2,1)$, $\sigma=1$, $B=5$ and $\delta=0.1$, the bound
+\eqref{eq:info} equals \finiteBound{}, against an asymptotic constant of
+\finiteConstant{}, and the common-temperature loss grows locally like $n$ to the power
+\finiteSlope{}, close to the predicted $1-\Delta_{\min}/\Delta_{\max}=0.8$.
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.66\textwidth]{figs/fig3_exploration_costs.pdf}
-\caption{Cumulative exploration loss as deployment size increases, from
-closed-form calculations with the sparse-exploration criterion fixed at
-$V_{\rm sp}=0.1^2$. Designs are matched on this criterion, not on realized
-error; a context-dependent temperature gives the gap-based curve.}
+\caption{Exploration loss against deployment size, in closed form, with the
+sparse-exploration criterion fixed at $V_{\rm sp}=0.1^2$.}
 \label{fig:costs}
 \end{figure}
 
@@ -692,12 +617,17 @@ observed coverage. ``Explored'' is the mean number of non-preferred actions.}
 \end{table}
 
 \paragraph{Boundary inference.} Table~\ref{tab:boundary} reports the estimator of
-Theorem~\ref{thm:boundary}. Exploration loss matches the constant in
-Theorem~\ref{thm:boundary}(v). With $\zeta=0.6$ coverage is close to nominal; at
-$n=10^6$, 5,000 replications give \covFiveK{} (MCSE \covFiveKmcse), with the
-estimated standard error at \covFiveKseRatio{} of the Monte Carlo standard
-deviation. With a very small boundary sample the interval under-covers:
-\covSmallNtau{} at $n\tau_n\approx\smallNtau$.
+Theorem~\ref{thm:boundary}. The exploration loss agrees with the constant in
+Theorem~\ref{thm:boundary}(v). With $\zeta=0.6$ coverage is close to nominal: at
+$n=10^6$, 5,000 replications give \covFiveK{} (MCSE \covFiveKmcse), and the estimated
+standard error is \covFiveKseRatio{} times the Monte Carlo standard deviation. When
+the boundary sample is very small the interval under-covers, with \covSmallNtau{} at
+$n\tau_n\approx\smallNtau$. We also checked the first-order approximation used in
+Figure~\ref{fig:map}(b), with \foReps{} replications per setting and undefined
+estimates set to zero. The ratio of Monte Carlo to approximate root mean squared error
+lies between \foRatioMin{} and \foRatioMax{} in the \foCells{} settings with
+$n\tau\ge3$. At $n\tau=\foNtauTiny$, where \foUndefPct\% of the estimates were
+undefined, it is \foRatioTiny{}.
 
 \begin{table}[tbp]
 \centering\small
@@ -709,89 +639,74 @@ Theorem~\ref{thm:boundary}(v) constant in parentheses. The last row is a separat
 \label{tab:boundary}
 \end{table}
 
-\paragraph{Temperature sweep.} Figure~\ref{fig:sweep} fixes $n=\curveN$ and
-sharpens a common temperature, with \curveReps{} replications per temperature. Wald
-coverage of the population effect falls from \curvePopCovLo{} at $1/\tau=1$ to
-\curvePopCovHi{} (Horvitz--Thompson) and \curveAipwCovHi{} (augmented estimator with
-the fitted working model) at $1/\tau=\curveInvTauMax$. Coverage of the boundary
-effect rises from \curveBndCovLo{} to \curveBndCovHi{}: at $1/\tau=1$ the
-overlap-target difference $\beta_{\ov,\tau}-\beta_0$ is \curveBndBiasLo{}, so the
-interval is centred at the wrong target, and the difference shrinks as $\tau$ falls.
-The exploration loss falls from \curveLossLo{} to \curveLossHi{}. Boundary coverage
-improves over this range because $n\tau$ stays at least \curveNtauMin{}; at fixed $n$,
-lowering the temperature further drives $n\tau$ toward zero and the boundary interval
-then fails as well (Table~\ref{tab:boundary}). For the Horvitz--Thompson estimator
-the Monte Carlo error understates the exact standard deviation once the policy is
-sharp: at $1/\tau=\curveInvTauMax$ its Monte Carlo root mean squared error is
-\curveHtMcRmseHi{}, while its exact standard deviation is of order
-$10^{\curveHtExactSdHiExp}$, carried by rare, very large terms that the replications
-do not observe (Figure~\ref{fig:sweep-error} in Appendix~\ref{app:figures}).
+\paragraph{Temperature sweep.} Figure~\ref{fig:sweep} fixes $n=\curveN$ and sharpens
+a common temperature, with \curveReps{} replications per temperature. Coverage of the
+population effect falls from \curvePopCovLo{} at $1/\tau=1$ to \curvePopCovHi{} for
+the Horvitz--Thompson estimator and \curveAipwCovHi{} for the augmented estimator at
+$1/\tau=\curveInvTauMax$. Coverage of the boundary effect rises from \curveBndCovLo{}
+to \curveBndCovHi{}. At $1/\tau=1$ the interval is centred on $\beta_{\ov,\tau}$, which
+is \curveBndBiasLo{} away from $\beta_0$, and the gap closes as $\tau$ falls. Meanwhile
+the exploration loss drops from \curveLossLo{} to \curveLossHi{}. Over this range
+$n\tau$ stays above \curveNtauMin{}; pushing the temperature lower at fixed $n$ would
+eventually break the boundary interval as well (Table~\ref{tab:boundary}). Once the
+policy is sharp, Monte Carlo understates the error of the Horvitz--Thompson estimator.
+At $1/\tau=\curveInvTauMax$ its Monte Carlo root mean squared error is
+\curveHtMcRmseHi{}, but its exact standard deviation is of order
+$10^{\curveHtExactSdHiExp}$, driven by rare and very large terms that the replications
+never draw (Figure~\ref{fig:sweep-error} in Appendix~\ref{app:figures}).
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=\textwidth]{figs/fig4_temperature_sweep.pdf}
-\caption{Common temperature at fixed $n=\curveN$, \curveReps{} replications per
-temperature, same design as Figure~\ref{fig:map}. (a) Wald coverage with 95\%
-Monte Carlo intervals for the population effect (Horvitz--Thompson and augmented
-estimator with a fitted working model) and for the boundary effect; the top axis
-shows $n\tau$, which decreases to the right. (b) Cumulative exploration loss and
-expected number of non-preferred actions; lines are exact expectations, markers
-Monte Carlo.}
+\caption{Sharpening a common temperature at $n=\curveN$. (a) Coverage of Wald
+intervals, with 95\% Monte Carlo bands; the top axis shows $n\tau$. (b) Exploration
+loss and expected number of non-preferred actions (lines exact, markers Monte
+Carlo).}
 \label{fig:sweep}
 \end{figure}
 
-\paragraph{A local-linear benchmark.} The estimator of Theorem~\ref{thm:boundary}
-uses the known assignment probabilities. An analyst could instead ignore them and
-treat the logs as a fuzzy regression-discontinuity design at $\Delta=0$, taking the
-ratio of the gaps between local-linear fits of $Y$ and of $A$ on either side of zero
-with bandwidth $b$. For $\tau>0$ the assignment probability is continuous at zero, so
-this is not a regression-discontinuity design in the usual sense, and its probability
-limit is not $\beta_0$: the observed mean
-$\E[Y\mid H=h]=h+e_\tau(h)(1+|h|)$ is not linear on either side even though the
-potential-outcome means are, and at $1/\tau=30$ and $b=0.2$ the limit is
-\rdLimitThirty{} rather than $1$. The comparison approaches a
-regression-discontinuity design only as the policy sharpens.
-Table~\ref{tab:rd} in Appendix~\ref{app:figures} reports both estimators on the same
-logs at $n=10^5$, with probability limits computed by quadrature. At $1/\tau\le30$
-neither is reliable: the estimator of Theorem~\ref{thm:boundary} is centred at
-$\beta_{\ov,\tau}$, and the local-linear comparison has a small first-stage gap and a
-limit away from $\beta_0$. At $1/\tau=120$ both cover at close to the nominal level,
-and with $b=0.2$ the local-linear comparison has the smaller error; at $1/\tau=1000$
-it has the smaller error at both bandwidths. These comparisons are specific to this
-design and range of temperatures. They concern the choice of boundary estimator; the
-population-side lower bounds hold for every estimator.
+\paragraph{A local-linear benchmark.} An analyst could also ignore the known
+probabilities and treat the logs as a fuzzy regression-discontinuity design at
+$\Delta=0$, dividing the jump in a local-linear fit of $Y$ by the jump in a fit of
+$A$, with bandwidth $b$. For $\tau>0$ the assignment probability is continuous at
+zero, so this is only an approximation to such a design, and its limit is not
+$\beta_0$ in general. The observed mean $\E[Y\mid H=h]=h+e_\tau(h)(1+|h|)$ is curved on both
+sides even though the potential-outcome means are linear; at $1/\tau=30$ and $b=0.2$
+the estimator converges to \rdLimitThirty{} instead of $1$. Table~\ref{tab:rd} in
+Appendix~\ref{app:figures} compares the two estimators on the same logs at $n=10^5$.
+Neither works well at $1/\tau\le30$. At $1/\tau=120$ both cover at about the nominal
+rate and the local-linear estimator with $b=0.2$ is more accurate, and at $1/\tau=1000$
+it is more accurate at both bandwidths. These findings are specific to this design.
+They bear on the choice of boundary estimator, whereas the lower bounds for the
+population effect apply to every estimator.
 
 %=============================================================================
 \section{Discussion}\label{sec:discussion}
 
-The results separate two uses of logs from sharpening policies. If the question is
-how outcomes respond where the deployed policy is indifferent, and the operational
-cost vanishes at the boundary, a growing deployment permits increasingly precise
-local inference, uniformly over a Lipschitz model, while cumulative exploration loss
-vanishes; the number of exploratory actions still grows, but their operational cost
-falls. If the question is the population average effect, uniformly consistent
-estimation requires divergent worst-case exploration loss, and deployment size does
-not remove that requirement. Reporting an effect estimated from such logs therefore
-requires saying which of the two quantities it is.
+Logs from a sharpening policy are good for one question and poor for another. If we
+want to know how outcomes respond where the policy is indifferent, and deviations cost
+little there, a growing deployment gives increasingly precise inference while the
+exploration loss vanishes. If we want the population average effect, the worst-case
+loss must grow without bound, and a larger deployment does not help. Anyone reporting
+an effect estimated from such logs should therefore say which of the two it is.
 
-For design, the relevant choice is not whether to use temperature but how. With one
-temperature shared by all contexts, the probability of the non-preferred action
-decays exponentially in the policy's confidence, so reaching confident contexts
-forces a temperature that is costly near the boundary; uniform mixing,
-context-dependent temperatures or temperature mixtures with a vanishing weight on a
-moderate temperature avoid this. Allocating by the gap saves further loss when gaps
-are heterogeneous; in the closed-form costs of Section~\ref{sec:sims} the saving
-relative to uniform mixing is about eleven percent.
+For design, the question is how to use temperature. With one temperature for all
+contexts, the probability of the non-preferred action falls off exponentially with the
+policy's confidence, so reaching confident contexts requires a temperature that is
+expensive near the boundary. Uniform mixing, context-specific temperatures and
+mixtures that put a vanishing weight on a moderate temperature all avoid this.
+Allocating by the gap saves a little more when gaps vary; in the example of
+Section~\ref{sec:sims} the saving over uniform mixing is about eleven percent.
 
-\paragraph{Limitations.} The policy is known and assignments are logged; the score
-and preferred action do not learn from outcomes; the setting is a single decision per
-unit with independent contexts; the boundary results are one-dimensional; the lower
-bounds assume Gaussian outcomes with known variance and exclude models in which
-boundary data identify the population effect; the separation requires an operational
-cost that vanishes at the boundary; and the treatment is strategy assignment under a
-fixed generator, not the realized text. Extending the results to learned scores,
-multidimensional scores (for example the conditional effect given $\Delta(H)=0$) and
-multi-turn conversations is left open.
+\paragraph{Limitations.} The policy is known and its assignments are logged, and the
+score does not learn from outcomes. Each unit receives one decision and contexts are
+independent. The boundary results assume a one-dimensional score. The lower bounds
+assume Gaussian outcomes with known variance and exclude models in which boundary
+data identify the population effect, and the separation needs a cost that vanishes at
+the boundary. The treatment is the choice of strategy under a fixed generator, not the
+text that is produced. We leave learned scores, multidimensional scores (where a
+natural target is the effect given $\Delta(H)=0$) and multi-turn conversations for
+future work.
 
 
 \section*{Data availability statement}
