@@ -12,7 +12,8 @@ manuscript can be traced to one invocation.
   python run.py coverage     # Thm D coverage diagnostics (bias, SE/SD, normality), MC
   python run.py audit        # counterexamples from the 2026-09-17 audit (quadrature)
   python run.py phase        # Figure 1: exact risks and loss over temperatures (quadrature)
-  python run.py curve        # Figure 2: estimators vs temperature at fixed n (MC + exact)
+  python run.py curve        # Figure 4: estimators vs temperature at fixed n (MC + exact/first-order)
+  python run.py firstorder   # accuracy of the first-order RMSE of the boundary estimator (MC)
 
 Naming: `costs` and `finite` evaluate closed forms / quadrature under the sparse-exploration
 design-variance criterion E[sigma^2/p]/n = delta^2; they do not run estimators. `designs`,
@@ -323,10 +324,12 @@ def exact_moments(tau, m=4_000_000):
 
     H ~ U(-1,1), Delta = h, e = sig(h/tau) = P(A=1|H), q = sig(-|h|/tau), g = |h|,
     mu0 = h, mu1 = h + 1 + |h|, sigma = 1.  Returns per-unit quantities; divide by n where noted.
-      v_ht     : n * Var(HT estimator of theta)                (exact)
-      v_aipw   : n * Var(AIPW with the true regression)         (exact; = Var(c) + E[1/e + 1/(1-e)])
+      v_ht     : n * Var(HT estimator of theta)                (exact: HT is unbiased)
+      v_aipw   : n * Var(oracle AIPW with the TRUE regression)  (exact; = Var(c) + E[1/e + 1/(1-e)])
       bias_b   : beta_ov,tau - beta_0                           (exact)
-      v_b      : n * first-order variance of the boundary estimator (exact linearization)
+      v_b      : n * FIRST-ORDER (linearization) variance of the ratio-type boundary estimator.
+                 sqrt(bias_b**2 + v_b/n) is a first-order RMSE approximation, not the exact
+                 finite-sample RMSE; see `run.py firstorder` for its accuracy.
       loss_1   : E[g q], so R_n = n * loss_1                     (exact)
       offgreedy: E[q], expected fraction of off-greedy actions  (exact)
     """
@@ -422,14 +425,50 @@ def cmd_curve(args):
                 row[f"{key}_coverage"] = cov_rate(covered)
                 row[f"{key}_coverage_mcse"] = cov_mcse(covered)
                 row[f"{key}_failures"] = int((~ok).sum())
-            row.update(ht_sd_exact=np.sqrt(ex["v_ht"] / args.n), aipw_sd_exact=np.sqrt(ex["v_aipw"] / args.n),
-                       bnd_bias_exact=ex["bias_b"], bnd_sd_exact=np.sqrt(ex["v_b"] / args.n),
-                       bnd_rmse_exact=np.sqrt(ex["bias_b"] ** 2 + ex["v_b"] / args.n),
+            row.update(ht_sd_exact=np.sqrt(ex["v_ht"] / args.n),
+                       aipw_oracle_sd_exact=np.sqrt(ex["v_aipw"] / args.n),
+                       bnd_bias_exact=ex["bias_b"], bnd_sd_first_order=np.sqrt(ex["v_b"] / args.n),
+                       bnd_rmse_first_order=np.sqrt(ex["bias_b"] ** 2 + ex["v_b"] / args.n),
                        loss_mc=float(df["loss"].mean()), loss_exact=args.n * ex["loss_1"],
                        offgreedy_mc=float(df["offgreedy"].mean()), offgreedy_exact=args.n * ex["offgreedy"])
             rows.append(row)
             print(f"1/tau={inv_tau}: done", flush=True)
     save(pd.DataFrame(rows), "curve", args, t0)
+
+
+def _firstorder_rep(job):
+    n, tau, seed = job
+    rng = np.random.default_rng(seed)
+    h = rng.uniform(-1, 1, n)
+    e = sig(h / tau)
+    a = rng.uniform(size=n) < e
+    y = h + (1 + np.abs(h)) * a + rng.normal(size=n)
+    w1, w0 = a * (1 - e), (~a) * e
+    if w1.sum() == 0 or w0.sum() == 0:
+        return np.nan
+    return (w1 * y).sum() / w1.sum() - (w0 * y).sum() / w0.sum()
+
+
+def cmd_firstorder(args):
+    """Accuracy of the first-order RMSE approximation for the boundary estimator (Figure 2b)."""
+    from multiprocessing import Pool
+    t0 = time.time()
+    ss = np.random.SeedSequence(args.seed)
+    rows = []
+    with Pool(args.procs) as pool:
+        for n in args.ns:
+            for inv_tau in args.inv_taus:
+                tau = 1.0 / inv_tau
+                ex = exact_moments(tau, m=2_000_000)
+                fo = float(np.sqrt(ex["bias_b"] ** 2 + ex["v_b"] / n))
+                seeds = [int(s.generate_state(1)[0]) for s in ss.spawn(args.reps)]
+                est = np.array(pool.map(_firstorder_rep, [(n, tau, sd) for sd in seeds], chunksize=8))
+                ok = ~np.isnan(est)
+                mc = float(np.sqrt(np.mean((est[ok] - BETA0) ** 2)))
+                rows.append(dict(n=n, inv_tau=inv_tau, n_tau=n * tau, reps=args.reps,
+                                 rmse_first_order=fo, rmse_mc=mc, ratio_mc_over_first_order=mc / fo,
+                                 undefined_rate=float(1 - ok.mean())))
+    save(pd.DataFrame(rows), "firstorder", args, t0)
 
 
 def main():
@@ -470,6 +509,13 @@ def main():
     s.add_argument("--inv-tau-max", type=float, default=300.0)
     s.add_argument("--points", type=int, default=90)
     s.add_argument("--quad", type=int, default=4_000_000, help="midpoint-rule points on (-1, 1)")
+
+    s = sub.add_parser("firstorder"); s.set_defaults(func=cmd_firstorder)
+    s.add_argument("--ns", type=int, nargs="+", default=[100, 1000, 10000])
+    s.add_argument("--inv-taus", type=float, nargs="+", default=[1, 3, 10, 30, 100, 300])
+    s.add_argument("--reps", type=int, default=4000)
+    s.add_argument("--seed", type=int, default=20260922)
+    s.add_argument("--procs", type=int, default=min(64, os.cpu_count() or 8))
 
     s = sub.add_parser("curve"); s.set_defaults(func=cmd_curve)
     s.add_argument("--n", type=int, default=100_000)

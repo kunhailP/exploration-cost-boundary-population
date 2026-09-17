@@ -3,7 +3,8 @@
   python plot_figures.py
 
   fig1_mechanism.pdf        exact functions of the Theorem 3 construction (no data)
-  fig2_separation_map.pdf   exact risks and loss contours from results/separation/phase.csv
+  fig2_separation_map.pdf   (a) exact HT risk, (b) first-order RMSE approximation for the boundary
+                            estimator, loss contours; from results/separation/phase.csv
   fig3_exploration_costs.pdf closed-form design costs from results/separation/costs.csv
   fig4_temperature_sweep.pdf fixed-n Monte Carlo and exact values from results/separation/curve.csv
 
@@ -96,8 +97,8 @@ def figure1():
     loss = N * ph.loss_1.to_numpy()[None, :]
 
     fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.3), sharey=True, constrained_layout=True)
-    panels = [(axes[0], rmse_pop, r"(a) population effect $\theta$ (HT)"),
-              (axes[1], rmse_bnd, r"(b) boundary effect $\beta_0$ (Theorem 1)")]
+    panels = [(axes[0], rmse_pop, r"(a) population effect $\theta$: HT, exact"),
+              (axes[1], rmse_bnd, r"(b) boundary effect $\beta_0$: first-order approx.")]
     for ax, rmse, title in panels:
         z = np.clip(np.log10(rmse), -2.5, 1.0)                 # dark = large error
         pc = ax.pcolormesh(inv_tau, log_n, z, cmap="viridis_r", shading="auto", vmin=-2.5, vmax=1.0,
@@ -126,9 +127,16 @@ def figure1():
         ax.set_xscale("log")
         ax.set_xlabel(r"sharpness $1/\tau$ (one common temperature)")
         ax.set_title(title)
+    # first-order approximation checked by Monte Carlo only where n*tau >= 3 (run.py firstorder)
+    y3 = np.log10(3 * inv_tau)
+    axes[1].plot(inv_tau, y3, color="black", lw=1.1, ls=":")
+    axes[1].fill_between(inv_tau, log_n[0], y3, color="white", alpha=0.35, lw=0)
+    axes[1].text(inv_tau[len(inv_tau) // 2], np.log10(3 * inv_tau[len(inv_tau) // 2]) - 0.35,
+                 r"$n\tau<3$", fontsize=7, ha="center",
+                 bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.8))
     axes[0].set_ylabel(r"$\log_{10} n$")
     cb = fig.colorbar(pc, ax=axes, shrink=0.9, pad=0.01)
-    cb.set_label(r"$\log_{10}$ RMSE (exact)")
+    cb.set_label(r"$\log_{10}$ RMSE")
     os.makedirs(FIGS, exist_ok=True)
     fig.savefig(os.path.join(FIGS, "fig2_separation_map.pdf"), dpi=300)
     plt.close(fig)
@@ -153,20 +161,20 @@ def figure2():
     fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.7), constrained_layout=True)
 
     ax = axes[0]
-    ax.plot(x, cu.ht_sd_exact, color=C_POP, lw=1.3, label=r"HT, exact SD")
-    ax.plot(x, cu.aipw_sd_exact, color=C_AIPW, lw=1.3, ls="-.", label=r"AIPW, exact SD")
-    ax.plot(x, cu.bnd_rmse_exact, color=C_BND, lw=1.3, label=r"boundary, exact RMSE")
-    ax.plot(x, cu.ht_rmse_mc, "o", color=C_POP, ms=3.5, mfc="none")
-    ax.plot(x, cu.aipw_rmse_mc, "s", color=C_AIPW, ms=3.2, mfc="none")
-    ax.plot(x, cu.bnd_rmse_mc, "^", color=C_BND, ms=3.5, mfc="none")
+    ax.plot(x, cu.ht_sd_exact, color=C_POP, lw=1.3, label=r"HT: exact SD")
+    ax.plot(x, cu.aipw_oracle_sd_exact, color=C_AIPW, lw=1.3, ls="-.", label=r"oracle AIPW: exact SD")
+    ax.plot(x, cu.bnd_rmse_first_order, color=C_BND, lw=1.3, label=r"boundary: first-order RMSE")
+    ax.plot(x, cu.ht_rmse_mc, "o", color=C_POP, ms=3.5, mfc="none", label="HT: MC RMSE")
+    ax.plot(x, cu.aipw_rmse_mc, "s", color=C_AIPW, ms=3.2, mfc="none", label="AIPW (fitted): MC RMSE")
+    ax.plot(x, cu.bnd_rmse_mc, "^", color=C_BND, ms=3.5, mfc="none", label="boundary: MC RMSE")
     ax.set_yscale("log")
-    ax.set_ylim(5e-3, 1e4)
+    ax.set_ylim(5e-3, 1e6)
     ax.set_ylabel("RMSE / SD")
-    ax.set_title("(a) error (lines exact, markers MC)")
-    ax.legend(loc="upper left", frameon=False)
+    ax.set_title("(a) error")
+    ax.legend(loc="upper left", frameon=False, fontsize=6.3, ncol=1)
 
     ax = axes[1]
-    for key, col, mk, lab in (("ht", C_POP, "o", r"HT for $\theta$"), ("aipw", C_AIPW, "s", r"AIPW for $\theta$"),
+    for key, col, mk, lab in (("ht", C_POP, "o", r"HT for $\theta$"), ("aipw", C_AIPW, "s", r"AIPW (fitted) for $\theta$"),
                               ("bnd", C_BND, "^", r"boundary for $\beta_0$")):
         ax.errorbar(x, cu[f"{key}_coverage"], yerr=1.96 * cu[f"{key}_coverage_mcse"], fmt=mk, color=col,
                     ms=3.5, mfc="none", lw=0.8, capsize=1.5, label=lab)
