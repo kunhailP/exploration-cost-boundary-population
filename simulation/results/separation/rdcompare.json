@@ -1,25 +1,23 @@
 {
   "out": "/tmp/claude-0/-root/ed2d4681-8e2c-4e6e-8b73-4017b98f4af8/scratchpad/ecbp/simulation/results/separation",
-  "ns": [
-    100,
-    1000,
-    10000
-  ],
+  "n": 100000,
   "inv_taus": [
-    1,
-    3,
     10,
     30,
-    100,
-    300
+    120,
+    1000
   ],
-  "reps": 4000,
-  "seed": 20260922,
+  "bandwidths": [
+    0.05,
+    0.2
+  ],
+  "reps": 1000,
+  "seed": 20260923,
   "procs": 64,
-  "subcommand": "firstorder",
+  "subcommand": "rdcompare",
   "git_commit": "972e1cb7eb1b700d7b6a984bc4d32b7197df4677",
   "numpy": "2.4.6",
   "python": "3.11.10",
-  "wall_seconds": 4.9,
-  "finished": "2026-09-17T10:21:22"
+  "wall_seconds": 103.4,
+  "finished": "2026-09-17T10:23:05"
 }

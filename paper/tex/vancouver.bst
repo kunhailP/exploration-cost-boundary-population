@@ -1,3 +1,5 @@
+%% MODIFIED VERSION: the inproceedings function was changed to omit the page
+%% block when no pages are given (avoids a stray ". ."). Not the original vancouver.bst.
 %% This `vancouver.bst' bibliographic style file (for LaTeX/BibTeX) is
 %% generated with the docstrip utility and modified manually to meet the
 %% ``Uniform Requirements for Manuscripts Submitted to Biomedical Journals''
@@ -1813,9 +1815,13 @@ FUNCTION {inproceedings}
     }
   if$
   format.date "year" output.check
-  date.block
-  add.blank
-  format.pages "pages" output.check
+  pages empty$
+    'skip$
+    { date.block
+      add.blank
+      format.pages "pages" output.check
+    }
+  if$
   new.block
   format.note output
   output.web.refs  % urlbst

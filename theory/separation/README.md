@@ -25,6 +25,7 @@ Novelty is claimed only relative to `related_work.md`, and only for the combinat
 |---|---|
 | `theorems_A_B_C.md` | Setup; **Thm A** (all-estimator information–exploration inequality in 𝓜(B, σ), adaptive designs included); A′ (achievability sandwich σ² vs σ² + B²); **Thm B** (one deterministic common temperature per n: loss ≳ n/log²(nδ²)); **Prop C** (context temperatures in (0, ∞] implement designs with p = 1/2 on {Δ = 0}); **Lemma R** (misspecified gaps: Kantorovich bound; iff only when attained) |
 | `theorem_D.md` | **Thm D**: one-dimensional boundary effect, Wald CI valid at β_0 while R_n → 0 for τ_n = n^{−ζ}, ζ ∈ (1/2, 1); full proof; Monte Carlo evidence |
+| `uniform_and_gap_shape.md` | uniform (S1) over 𝓜_Lip via Berry–Esseen; shape of the operational gap (power gaps, fixed cost per deviation) |
 | `corollary_S.md` | **Corollary S**: the separation inside the Theorem D model (pointwise TV bound at vanishing loss; uniform van Trees bound) |
 | `related_work.md` | Theorem-by-theorem comparison with prior results, with reading depth |
 
@@ -39,7 +40,8 @@ Novelty is claimed only relative to `related_work.md`, and only for the combinat
    δ = .1; `run.py audit`).
 5. Thm D is one-dimensional (Δ(h) = h). Its error O_p((nτ)^{−1/2}), equal to O_p((nR)^{−1/4}) under the
    strong form of (D5), is **achievable, not claimed optimal**, and holds in probability, not in RMSE.
-   Guarantees are pointwise in μ.
+   Over the globally Lipschitz model 𝓜_Lip the coverage guarantee is uniform
+   (`uniform_and_gap_shape.md`); the error is O_p((nτ)^{−1/2} + τ).
 6. The main gain is preventing divergence (common temperature vs uniform: ≈ 20× at n = 10⁵, δ = 0.1).
    Gap-based allocation saves a further 11% in the example. Lemma R gives a sufficient condition for
    when that is worth it (necessary and sufficient only when the Kantorovich bound is attained).
@@ -83,7 +85,8 @@ output with timing.
 
 | # | Finding | Resolution |
 |---|---|---|
-| 1 | A (bounded measurable μ) and D (Lipschitz near boundary) proved in different models | `corollary_S.md` |
+| 1 | A (bounded measurable μ) and D (Lipschitz near boundary) proved in different models | `uniform_and_gap_shape.md` | uniform (S1) over 𝓜_Lip via Berry–Esseen; shape of the operational gap (power gaps, fixed cost per deviation) |
+| `corollary_S.md` |
 | 2 | B's scope sentence covered bounded-support temperature mixtures; false | B restricted; counterexample in `run.py audit` |
 | 3 | D remark "differentiable ⇒ O(τ²) bias" false (c = 1 + \|h\|^{3/2}) | Remark corrected with a C^{1,1} + Lipschitz-f condition |
 | 4 | R's "iff" fails with atoms (F = (.99, .01), g = (1, 100), ρ = 36) | "if" in general; iff under attainment |

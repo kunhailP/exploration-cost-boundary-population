@@ -61,10 +61,11 @@ observation with H ∈ [u_1, u_2], where g ≥ γ F-almost surely.
 Assume (S-A). Consider any design in 𝓜_D (adaptive or not), with cumulative exploration loss R_n(μ). Let
 N = Σ_i 1{A_i = 0, H_i ∈ [u_1, u_2]}.
 
-**(S1) Boundary side, pointwise.** Take the non-adaptive common-temperature design τ_n = n^{−ζ},
-ζ ∈ (1/2, 1). Then R_n → 0, and for **every** μ ∈ 𝓜_D the Wald interval of Theorem D for β_0(μ) has
-asymptotic coverage 1 − η. This is Theorem D and its corollary. The guarantee is pointwise in μ; no
-uniformity over 𝓜_D is claimed.
+**(S1) Boundary side.** Take the non-adaptive common-temperature design τ_n = n^{−ζ},
+ζ ∈ (1/2, 1). Then R_n → 0, and for every μ ∈ 𝓜_D the Wald interval of Theorem D for β_0(μ) has
+asymptotic coverage 1 − η. In the manuscript the model is 𝓜_Lip (mean functions bounded by B and
+**globally** L-Lipschitz), and the coverage statement is **uniform** over 𝓜_Lip; see
+`uniform_and_gap_shape.md`.
 
 **(S2) Population side, pointwise impossibility at vanishing loss.** For every design and every t,
 
