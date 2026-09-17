@@ -50,6 +50,7 @@ python run.py boundary       # boundary inference, Monte Carlo
 python run.py coverage       # coverage diagnostics, Monte Carlo
 python run.py --out ../../results/separation/coverage_n1e6_r5000 coverage --ns 1000000 --reps-list 5000 --seed 20260920
 python run.py curve          # fixed-n temperature sweep, Monte Carlo (parallel)
+python run.py firstorder     # accuracy of the first-order RMSE of the boundary estimator (parallel)
 python plot_figures.py       # Figures 1-4
 cd ../../../paper/tex
 python make_separation_tables.py
