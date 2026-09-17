@@ -35,5 +35,6 @@ D̂_a and the zero-weight event do not either.
 (b) φ(u) ≥ λ_0 > 0 on (0, u_0] ⇒ R_n ≥ 2 log 2 · λ_0 f(0) n τ (1 + o(1)) → ∞ whenever nτ → ∞
     (∫_0^∞ sig(−v) dv = log 2, dominated convergence).
 
-A fixed cost per deviation therefore makes boundary inference require divergent loss as well; the
-separation needs a cost that vanishes at the boundary.
+With a fixed cost per deviation, boundary inference under a common-temperature design therefore also
+incurs divergent loss, and the separation (vanishing vs divergent loss) needs a cost that vanishes at the
+boundary. This does not compare the minimal costs of the two targets over all designs.

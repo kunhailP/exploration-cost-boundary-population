@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT/simulation/src/separation"
 R=../../results/separation
-for c in finite kantorovich costs audit phase designs boundary coverage curve firstorder rdcompare; do
+for c in finite kantorovich costs audit phase designs boundary coverage curve firstorder rdcompare rdlimit; do
   echo "== run.py $c"; python run.py "$c"
 done
 python run.py designs --rate --ns 10000 100000 1000000 --reps 200

@@ -85,8 +85,7 @@ output with timing.
 
 | # | Finding | Resolution |
 |---|---|---|
-| 1 | A (bounded measurable μ) and D (Lipschitz near boundary) proved in different models | `uniform_and_gap_shape.md` | uniform (S1) over 𝓜_Lip via Berry–Esseen; shape of the operational gap (power gaps, fixed cost per deviation) |
-| `corollary_S.md` |
+| 1 | A (bounded measurable μ) and D (Lipschitz near boundary) proved in different models | `corollary_S.md`; uniform (S1) over 𝓜_Lip in `uniform_and_gap_shape.md` |
 | 2 | B's scope sentence covered bounded-support temperature mixtures; false | B restricted; counterexample in `run.py audit` |
 | 3 | D remark "differentiable ⇒ O(τ²) bias" false (c = 1 + \|h\|^{3/2}) | Remark corrected with a C^{1,1} + Lipschitz-f condition |
 | 4 | R's "iff" fails with atoms (F = (.99, .01), g = (1, 100), ρ = 36) | "if" in general; iff under attainment |

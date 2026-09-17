@@ -70,7 +70,7 @@ model, while exploration loss tends to zero. In the same model, no design and
 estimator can estimate the population average effect uniformly consistently
 unless worst-case exploration loss diverges. The separation relies on the
 operational cost vanishing at the boundary; with a fixed cost per deviation,
-boundary inference also requires divergent loss. Without smoothness
+boundary inference under this design also incurs divergent loss. Without smoothness
 restrictions, uniform precision for the population effect requires loss that,
 as the target error shrinks, is of the order of the squared mean root gap
 divided by the squared error, independent of sample size. A single common
@@ -133,8 +133,8 @@ uniformly without divergent loss. Its ingredients are familiar, namely limited
 overlap, local randomization near a threshold and cost-weighted allocation; the
 contribution is to place both targets in one model on one cost scale, and to
 make precise when the separation fails. It depends on the cost vanishing at the
-boundary: if every deviation carries a fixed cost, boundary inference also
-requires divergent loss (Proposition~\ref{prop:gapshape}).
+boundary: if every deviation carries a fixed cost, boundary inference under a
+common temperature also incurs divergent loss (Proposition~\ref{prop:gapshape}).
 
 Figure~\ref{fig:separation} shows the construction behind the population-side
 lower bound. Two outcome models agree near the boundary and differ only for the
@@ -354,7 +354,7 @@ $\delta$ for the population effect requires worst-case loss of order at least
 $(\E\sqrt g)^2/\delta^2$ as $\delta\to0$, and this order does not depend on $n$
 (Theorem~\ref{thm:info}).
 \end{enumerate}
-If instead every deviation carries a fixed cost, (i) fails as well
+If instead every deviation carries a fixed cost, the loss in (i) diverges
 (Proposition~\ref{prop:gapshape}). Figure~\ref{fig:map} shows the separation for
 the simulation design of Section~\ref{sec:sims}. Under one common temperature the
 population effect reaches root mean squared error $\figDelta$ only where the
@@ -470,9 +470,10 @@ $n\tau_n\to\infty$, the condition under which Theorem~\ref{thm:boundary} applies
 \end{proposition}
 
 Part (b) covers any cost incurred per deviation irrespective of context, such as
-a review or a payment. Under such costs the boundary effect is no cheaper to
-learn than the population effect, and the separation below does not hold in this
-form. The proof is in Appendix~\ref{app:boundary}.
+a review or a payment. Under such costs the cumulative loss of boundary inference
+under a common-temperature design also diverges, so the separation below, which
+contrasts vanishing and divergent loss, does not hold in this form. Part (b) does not
+compare the minimal costs of the two targets over all designs. The proof is in Appendix~\ref{app:boundary}.
 
 %=============================================================================
 \section{Population effects require paid exploration}\label{sec:population}
@@ -739,22 +740,26 @@ Monte Carlo.}
 \label{fig:sweep}
 \end{figure}
 
-\paragraph{A regression-discontinuity benchmark.} The estimator of
-Theorem~\ref{thm:boundary} uses the known assignment probabilities and only the
-$\tau$-neighbourhood of the boundary. A fuzzy local-linear regression-discontinuity
-estimator at $\Delta=0$ ignores the probabilities and uses a bandwidth chosen by the
-analyst. Table~\ref{tab:rd} in Appendix~\ref{app:figures} compares the two at
-$n=10^5$ on the same logs. At $1/\tau\le30$ neither is reliable: the estimator of
-Theorem~\ref{thm:boundary} is centred at $\beta_{\ov,\tau}$ rather than $\beta_0$,
-and the discontinuity estimator has a weak first stage within the bandwidth. At
-$1/\tau=120$ both cover at close to the nominal level; with the wider bandwidth
-the discontinuity estimator has the smaller error there, and at $1/\tau=1000$ it has
-the smaller error at both bandwidths, helped by mean
-functions that are linear on each side of the boundary, which removes its bias at
-wide bandwidths. The regression-discontinuity estimator is therefore a competitive
-and often more efficient way to analyse such logs when the policy is sharp; the
-separation concerns which target is learnable and at what exploration cost, and
-does not depend on which boundary estimator is used.
+\paragraph{A local-linear benchmark.} The estimator of Theorem~\ref{thm:boundary}
+uses the known assignment probabilities. An analyst could instead ignore them and
+treat the logs as a fuzzy regression-discontinuity design at $\Delta=0$, taking the
+ratio of the gaps between local-linear fits of $Y$ and of $A$ on either side of zero
+with bandwidth $b$. For $\tau>0$ the assignment probability is continuous at zero, so
+this is not a regression-discontinuity design in the usual sense, and its probability
+limit is not $\beta_0$: the observed mean
+$\E[Y\mid H=h]=h+e_\tau(h)(1+|h|)$ is not linear on either side even though the
+potential-outcome means are, and at $1/\tau=30$ and $b=0.2$ the limit is
+\rdLimitThirty{} rather than $1$. The comparison approaches a
+regression-discontinuity design only as the policy sharpens.
+Table~\ref{tab:rd} in Appendix~\ref{app:figures} reports both estimators on the same
+logs at $n=10^5$, with probability limits computed by quadrature. At $1/\tau\le30$
+neither is reliable: the estimator of Theorem~\ref{thm:boundary} is centred at
+$\beta_{\ov,\tau}$, and the local-linear comparison has a small first-stage gap and a
+limit away from $\beta_0$. At $1/\tau=120$ both cover at close to the nominal level,
+and with $b=0.2$ the local-linear comparison has the smaller error; at $1/\tau=1000$
+it has the smaller error at both bandwidths. These comparisons are specific to this
+design and range of temperatures. They concern the choice of boundary estimator; the
+population-side lower bounds hold for every estimator.
 
 %=============================================================================
 \section{Discussion}\label{sec:discussion}
@@ -828,7 +833,7 @@ The author reviewed all content and takes full responsibility for it.
 
 \begin{figure}[tbp]
 \centering
-\includegraphics[width=0.66\textwidth]{figs/figA1_exploration_costs_small_delta.pdf}
+\includegraphics[width=0.55\textwidth]{figs/figA1_exploration_costs_small_delta.pdf}
 \caption{As Figure~\ref{fig:costs}, with the sparse-exploration criterion fixed at
 $V_{\rm sp}=0.03^2$.}
 \label{fig:costs-small}
@@ -836,7 +841,7 @@ $V_{\rm sp}=0.03^2$.}
 
 \begin{figure}[tbp]
 \centering
-\includegraphics[width=0.85\textwidth]{figs/figA2_temperature_sweep_error.pdf}
+\includegraphics[width=0.7\textwidth]{figs/figA2_temperature_sweep_error.pdf}
 \caption{Error diagnostics for the runs of Figure~\ref{fig:sweep}. Lines: exact
 standard deviation of the Horvitz--Thompson estimator and of an oracle augmented
 estimator that uses the true regression (a reference, not an estimator used in the
@@ -850,13 +855,14 @@ fitted working model, and the boundary estimator.}
 \begin{table}[tbp]
 \centering\small
 \tabRD
-\caption{Boundary effect at $n=10^5$, 1,000 replications: estimator of
-Theorem~\ref{thm:boundary} (known probabilities) and a fuzzy local-linear
-regression-discontinuity estimator at $\Delta=0$ with a triangular kernel,
-bandwidth $b$ and heteroskedasticity-robust delta-method standard errors. The
-design and the exploration loss are the same for both. Very large errors of the
-discontinuity estimator at larger $\tau$ reflect a weak first stage within the
-bandwidth.}
+\caption{Boundary effect $\beta_0=1$ at $n=10^5$, 1,000 replications, same logs for
+both estimators: the estimator of Theorem~\ref{thm:boundary} (known probabilities)
+and a fuzzy local-linear comparison at $\Delta=0$ (triangular kernel, bandwidth $b$,
+heteroskedasticity-robust delta-method standard errors). ``Limit'' is the probability
+limit, $\beta_{\ov,\tau}$ for the first estimator and the ratio of population
+local-linear gaps for the second, computed by quadrature; ``first stage'' is the
+population gap in the assignment probability. Very large errors reflect a small first
+stage.}
 \label{tab:rd}
 \end{table}
 

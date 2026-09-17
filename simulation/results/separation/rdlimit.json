@@ -1,0 +1,19 @@
+{
+  "out": "/tmp/claude-0/-root/ed2d4681-8e2c-4e6e-8b73-4017b98f4af8/scratchpad/ecbp/simulation/results/separation",
+  "inv_taus": [
+    10,
+    30,
+    120,
+    1000
+  ],
+  "bandwidths": [
+    0.05,
+    0.2
+  ],
+  "subcommand": "rdlimit",
+  "git_commit": "9a64d35764f8e9481e900768d4c0dfbd8aba6036",
+  "numpy": "2.4.6",
+  "python": "3.11.10",
+  "wall_seconds": 0.3,
+  "finished": "2026-09-17T10:51:31"
+}
