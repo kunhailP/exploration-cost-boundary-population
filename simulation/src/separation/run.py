@@ -14,6 +14,7 @@ manuscript can be traced to one invocation.
   python run.py phase        # Figure 1: exact risks and loss over temperatures (quadrature)
   python run.py curve        # Figure 4: estimators vs temperature at fixed n (MC + exact/first-order)
   python run.py firstorder   # accuracy of the first-order RMSE of the boundary estimator (MC)
+  python run.py rdcompare    # boundary effect: Theorem 1 estimator vs fuzzy local-linear RD (MC)
 
 Naming: `costs` and `finite` evaluate closed forms / quadrature under the sparse-exploration
 design-variance criterion E[sigma^2/p]/n = delta^2; they do not run estimators. `designs`,
@@ -445,7 +446,7 @@ def _firstorder_rep(job):
     y = h + (1 + np.abs(h)) * a + rng.normal(size=n)
     w1, w0 = a * (1 - e), (~a) * e
     if w1.sum() == 0 or w0.sum() == 0:
-        return np.nan
+        return np.nan              # undefined; the manuscript's convention sets the estimate to 0
     return (w1 * y).sum() / w1.sum() - (w0 * y).sum() / w0.sum()
 
 
@@ -464,11 +465,82 @@ def cmd_firstorder(args):
                 seeds = [int(s.generate_state(1)[0]) for s in ss.spawn(args.reps)]
                 est = np.array(pool.map(_firstorder_rep, [(n, tau, sd) for sd in seeds], chunksize=8))
                 ok = ~np.isnan(est)
-                mc = float(np.sqrt(np.mean((est[ok] - BETA0) ** 2)))
+                conv = np.where(ok, est, 0.0)       # manuscript convention: estimate 0 when undefined
+                mc_conv = float(np.sqrt(np.mean((conv - BETA0) ** 2)))
+                mc_def = float(np.sqrt(np.mean((est[ok] - BETA0) ** 2)))
                 rows.append(dict(n=n, inv_tau=inv_tau, n_tau=n * tau, reps=args.reps,
-                                 rmse_first_order=fo, rmse_mc=mc, ratio_mc_over_first_order=mc / fo,
+                                 rmse_first_order=fo,
+                                 rmse_mc=mc_conv, ratio_mc_over_first_order=mc_conv / fo,
+                                 rmse_mc_defined_only=mc_def, ratio_defined_only=mc_def / fo,
                                  undefined_rate=float(1 - ok.mean())))
     save(pd.DataFrame(rows), "firstorder", args, t0)
+
+
+
+def _rd_rep(job):
+    n, tau, bw, seed = job
+    rng = np.random.default_rng(seed)
+    h = rng.uniform(-1, 1, n)
+    e = sig(h / tau)
+    a = rng.uniform(size=n) < e
+    y = h + (1 + np.abs(h)) * a + rng.normal(size=n)
+    res = {}
+    # Theorem 1 estimator (known propensities)
+    w1, w0 = a * (1 - e), (~a) * e
+    if w1.sum() > 0 and w0.sum() > 0:
+        m1, m0 = (w1 * y).sum() / w1.sum(), (w0 * y).sum() / w0.sum()
+        psi = w1 * (y - m1) / w1.mean() - w0 * (y - m0) / w0.mean()
+        res["ow"], res["ow_se"] = m1 - m0, psi.std(ddof=1) / np.sqrt(n)
+    else:
+        res["ow"], res["ow_se"] = 0.0, np.inf
+    # fuzzy local-linear RD at 0 (ignores the known propensities); triangular kernel, bandwidth bw
+    fits = []
+    for side in (h >= 0, h < 0):
+        xs, ys, as_ = h[side], y[side], a[side].astype(float)
+        k = np.clip(1 - np.abs(xs) / bw, 0, None)
+        keep = k > 0
+        xs, ys, as_, k = xs[keep], ys[keep], as_[keep], k[keep]
+        X = np.column_stack([np.ones_like(xs), xs])
+        M = np.linalg.inv((X.T * k) @ X) @ (X.T * k)    # coefficients = M @ v
+        fits.append((X, M, ys, as_))
+    jy = fits[0][1][0] @ fits[0][2] - fits[1][1][0] @ fits[1][2]
+    ja = fits[0][1][0] @ fits[0][3] - fits[1][1][0] @ fits[1][3]
+    if abs(ja) < 1e-8:
+        res["rd"], res["rd_se"] = 0.0, np.inf
+        return res
+    est = jy / ja
+    var = 0.0
+    for X, M, ys, as_ in fits:                          # delta method: Z = Y - est * A
+        z = ys - est * as_
+        r = z - X @ (M @ z)
+        var += np.sum((M[0] * r) ** 2)                   # HC0 variance of the intercept
+    res["rd"], res["rd_se"] = est, np.sqrt(var) / abs(ja)
+    return res
+
+
+def cmd_rdcompare(args):
+    """Boundary effect: Theorem 1 estimator (known propensities) vs fuzzy local-linear RD."""
+    from multiprocessing import Pool
+    t0 = time.time()
+    ss = np.random.SeedSequence(args.seed)
+    rows = []
+    with Pool(args.procs) as pool:
+        for inv_tau in args.inv_taus:
+            tau = 1.0 / inv_tau
+            for bw in args.bandwidths:
+                seeds = [int(s.generate_state(1)[0]) for s in ss.spawn(args.reps)]
+                df = pd.DataFrame(pool.map(_rd_rep, [(args.n, tau, bw, sd) for sd in seeds], chunksize=4))
+                row = dict(n=args.n, inv_tau=inv_tau, tau=tau, n_tau=args.n * tau, bandwidth=bw, reps=args.reps)
+                for key in ("ow", "rd"):
+                    est, se = df[key].to_numpy(), df[key + "_se"].to_numpy()
+                    covered = np.abs(est - BETA0) <= 1.96 * se
+                    row[f"{key}_bias"] = float(np.mean(est) - BETA0)
+                    row[f"{key}_rmse"] = float(np.sqrt(np.mean((est - BETA0) ** 2)))
+                    row[f"{key}_coverage"] = cov_rate(covered)
+                    row[f"{key}_coverage_mcse"] = cov_mcse(covered)
+                rows.append(row)
+                print(f"1/tau={inv_tau} bw={bw}: done", flush=True)
+    save(pd.DataFrame(rows), "rdcompare", args, t0)
 
 
 def main():
@@ -515,6 +587,14 @@ def main():
     s.add_argument("--inv-taus", type=float, nargs="+", default=[1, 3, 10, 30, 100, 300])
     s.add_argument("--reps", type=int, default=4000)
     s.add_argument("--seed", type=int, default=20260922)
+    s.add_argument("--procs", type=int, default=min(64, os.cpu_count() or 8))
+
+    s = sub.add_parser("rdcompare"); s.set_defaults(func=cmd_rdcompare)
+    s.add_argument("--n", type=int, default=100_000)
+    s.add_argument("--inv-taus", type=float, nargs="+", default=[10, 30, 120, 1000])
+    s.add_argument("--bandwidths", type=float, nargs="+", default=[0.05, 0.2])
+    s.add_argument("--reps", type=int, default=1000)
+    s.add_argument("--seed", type=int, default=20260923)
     s.add_argument("--procs", type=int, default=min(64, os.cpu_count() or 8))
 
     s = sub.add_parser("curve"); s.set_defaults(func=cmd_curve)
