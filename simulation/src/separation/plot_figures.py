@@ -1,16 +1,18 @@
-"""Draw the four manuscript figures.
+"""Draw the manuscript figures from simulation/results/separation/.
 
   python plot_figures.py
 
-  fig1_mechanism.pdf        exact functions of the Theorem 3 construction (no data)
-  fig2_separation_map.pdf   (a) exact HT risk, (b) first-order RMSE approximation for the boundary
-                            estimator, loss contours; from results/separation/phase.csv
-  fig3_exploration_costs.pdf closed-form design costs from results/separation/costs.csv
-  fig4_temperature_sweep.pdf fixed-n Monte Carlo and exact values from results/separation/curve.csv
+Main text
+  fig1_mechanism.pdf           Theorem 3 construction: exact functions, no data
+  fig2_separation_map.pdf      (a) exact HT risk, (b) first-order RMSE approximation of the boundary
+                               estimator, with exploration-loss contours; from phase.csv
+  fig3_exploration_costs.pdf   closed-form design costs at V_sp = 0.1^2; from costs.csv
+  fig4_temperature_sweep.pdf   Wald coverage and exploration at fixed n; from curve.csv
+Appendix
+  figA1_exploration_costs_small_delta.pdf   as Figure 3 at V_sp = 0.03^2
+  figA2_temperature_sweep_error.pdf         error diagnostics for the Figure 4 runs
 
-Figures 1 and 3 follow a review revision (source bundle based on commit df5007f); Figure 1's
-axis label bug (a tab character in "q_tau") is fixed here and the bump integral is computed with
-numpy instead of scipy.
+Figures are sized for a 6.3-inch text width, so fonts print at roughly their nominal size.
 """
 import json
 import os
@@ -26,68 +28,57 @@ RES = os.path.normpath(os.path.join(HERE, "..", "..", "results", "separation"))
 FIGS = os.path.normpath(os.path.join(HERE, "..", "..", "..", "paper", "tex", "figs"))
 DELTA = 0.1
 LOSS_LEVELS = [1, 10, 100, 1000]
+TEXTWIDTH = 6.3
 
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 9.5, "axes.labelsize": 9,
-                     "legend.fontsize": 7.5, "xtick.labelsize": 8, "ytick.labelsize": 8,
-                     "pdf.fonttype": 42})
-C_POP, C_AIPW, C_BND, C_LOSS = "#b2182b", "#ef8a62", "#2166ac", "#4d4d4d"
+                     "legend.fontsize": 8, "xtick.labelsize": 8.5, "ytick.labelsize": 8.5,
+                     "pdf.fonttype": 42, "axes.spines.top": False, "axes.spines.right": False})
+C_POP, C_AIPW, C_BND, C_LOSS, C_OFF = "#b2182b", "#ef8a62", "#2166ac", "#4d4d4d", "#7b3294"
+BLUE, ORANGE, GREEN = "#17628B", "#C56523", "#437F5F"
+BOX = dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85)
 
 
+def save(fig, name, tight=True):
+    os.makedirs(FIGS, exist_ok=True)
+    fig.savefig(os.path.join(FIGS, name), dpi=300, bbox_inches="tight" if tight else None)
+    plt.close(fig)
+
+
+# ------------------------------------------------------------------ Figure 1
 def figure_mechanism():
-    """Theorem 3 construction: same boundary effect, different population effect."""
     h = np.linspace(-1, 1, 2401)
     u1, u2, t = 0.35, 0.85, 1.0
     b = np.where((h >= u1) & (h <= u2), np.sin(np.pi * (h - u1) / (u2 - u1)) ** 2, 0.0)
     hh = np.linspace(u1, u2, 2_000_001)
     theta1 = t * np.trapz(np.sin(np.pi * (hh - u1) / (u2 - u1)) ** 2, hh) / 2   # E[b(H)], H ~ U(-1,1)
-    blue, orange, green = "#17628B", "#C56523", "#437F5F"
-    fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.0), constrained_layout=True)
+
+    fig, ax = plt.subplots(1, 2, figsize=(TEXTWIDTH, 2.7), constrained_layout=True)
     for a in ax:
-        a.axvspan(u1, u2, color=orange, alpha=0.12, lw=0)
+        a.axvspan(u1, u2, color=ORANGE, alpha=0.13, lw=0)
         a.axvline(0, color="0.55", ls=":", lw=1)
-        a.set_xlabel(r"score / context $h$")
-        a.spines[["top", "right"]].set_visible(False)
-    ax[0].plot(h, t * b, color=orange, lw=2, label=r"$c^1(h)=b(h)$")
-    ax[0].plot(h, np.zeros_like(h), color=blue, lw=1.7, ls="--", label=r"$c^0(h)=0$")
-    ax[0].scatter([0], [0], color="black", s=20, zorder=5)
-    ax[0].set(xlim=(-1, 1), ylim=(-0.12, 1.28), ylabel=r"causal effect $c(h)$")
-    ax[0].set_title("(a) same boundary, different population", loc="left")
-    ax[0].text(-0.95, 0.86, r"$\beta_0^0=\beta_0^1=0$" + "\n" + rf"$\theta^0=0,\quad\theta^1={theta1:.3f}$",
-               fontsize=9)
-    ax[0].legend(loc="upper left", frameon=False, bbox_to_anchor=(0, 0.60))
-    for tau, color in ((0.2, blue), (0.1, green), (0.05, orange)):
+        a.set_xlabel(r"context score $h$")
+        a.set_xlim(-1, 1)
+    ax[0].plot(h, np.zeros_like(h), color=BLUE, lw=1.8, ls="--", label=r"Model I: $c^{\mathrm{I}}(h)=0$")
+    ax[0].plot(h, t * b, color=ORANGE, lw=2, label=r"Model II: $c^{\mathrm{II}}(h)=b(h)$")
+    ax[0].scatter([0], [0], color="black", s=18, zorder=5)
+    ax[0].set(ylim=(-0.12, 1.45), ylabel=r"causal effect $c(h)$")
+    ax[0].set_title("(a) effects in two outcome models", loc="left")
+    ax[0].text(-0.96, 0.98, "boundary effect: 0 in both\n"
+               + rf"population effect: 0 (I), {theta1:.3f} (II)", fontsize=8, va="top")
+    ax[0].text((u1 + u2) / 2, 1.42, "models differ", fontsize=8, ha="center", va="top", color=ORANGE)
+    ax[0].legend(loc="center left", bbox_to_anchor=(0, 0.38), frameon=False)
+    for tau, color in ((0.2, BLUE), (0.1, GREEN), (0.05, ORANGE)):
         ax[1].semilogy(h, 1 / (1 + np.exp(np.abs(h) / tau)), color=color, lw=1.8, label=rf"$\tau={tau:g}$")
-    ax[1].set(xlim=(-1, 1), ylim=(1e-9, 1), ylabel=r"off-greedy probability $q_\tau(h)$")
-    ax[1].set_title("(b) off-greedy probability", loc="left")
-    ax[1].legend(loc="lower center", frameon=False, ncol=3, columnspacing=0.8)
-    fig.savefig(os.path.join(FIGS, "fig1_mechanism.pdf"), dpi=300)
-    plt.close(fig)
-    return dict(u1=u1, u2=u2, t=t, theta0=0.0, theta1=float(theta1), beta0=0.0)
+    ax[1].set(ylim=(1e-9, 1.5), ylabel=r"off-greedy probability $q_\tau(h)$")
+    ax[1].set_title("(b) probability of the unpreferred action", loc="left")
+    ax[1].text((u1 + u2) / 2, 3e-9, "models\ndiffer", fontsize=8, ha="center", va="bottom", color=ORANGE)
+    ax[1].legend(loc="upper left", frameon=False, ncol=1)
+    save(fig, "fig1_mechanism.pdf")
+    return dict(u1=u1, u2=u2, t=t, theta_model_I=0.0, theta_model_II=float(theta1), beta0=0.0)
 
 
-def figure_costs():
-    """Closed-form exploration loss vs deployment size at a fixed sparse-exploration criterion."""
-    rows = pd.read_csv(os.path.join(RES, "costs.csv"))
-    blue, orange, green = "#17628B", "#C56523", "#437F5F"
-    fig, axes = plt.subplots(1, 2, figsize=(7.5, 3.2), constrained_layout=True)
-    for ax, delta, label in zip(axes, (0.1, 0.03), ("(a)", "(b)")):
-        sel = rows[np.isclose(rows.delta, delta)].sort_values("n")
-        for col, lab, color, marker in (("R_common_temperature", "one common temperature", orange, "o"),
-                                        ("R_uniform", "uniform mixing", blue, "s"),
-                                        ("R_optimal", "gap-based allocation", green, "^")):
-            ax.loglog(sel.n, sel[col], label=lab, color=color, marker=marker, markersize=4, lw=1.8)
-        ax.set_title(label + rf" fixed $V_{{\rm sp}}={delta:g}^2$", loc="left")
-        ax.set_xlabel(r"deployment size $n$")
-        ax.set_ylabel(r"expected cumulative loss $R_n$")
-        ax.set_ylim(25 if delta == 0.1 else 300, 1e6)
-        ax.grid(which="major", color=".9", lw=.6)
-        ax.spines[["top", "right"]].set_visible(False)
-    axes[0].legend(loc="upper left", frameon=False, fontsize=7.4)
-    fig.savefig(os.path.join(FIGS, "fig3_exploration_costs.pdf"), dpi=300)
-    plt.close(fig)
-
-
-def figure1():
+# ------------------------------------------------------------------ Figure 2
+def figure_map():
     ph = pd.read_csv(os.path.join(RES, "phase.csv")).sort_values("inv_tau")
     inv_tau = ph.inv_tau.to_numpy()
     log_n = np.linspace(2, 9, 281)
@@ -96,124 +87,131 @@ def figure1():
     rmse_bnd = np.sqrt(ph.bias_b.to_numpy()[None, :] ** 2 + ph.v_b.to_numpy()[None, :] / N)
     loss = N * ph.loss_1.to_numpy()[None, :]
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.3), sharey=True, constrained_layout=True)
-    panels = [(axes[0], rmse_pop, r"(a) population effect $\theta$: HT, exact"),
-              (axes[1], rmse_bnd, r"(b) boundary effect $\beta_0$: first-order approx.")]
-    for ax, rmse, title in panels:
-        z = np.clip(np.log10(rmse), -2.5, 1.0)                 # dark = large error
+    fig, axes = plt.subplots(1, 2, figsize=(TEXTWIDTH, 3.0), sharey=True, constrained_layout=True)
+    panels = [(axes[0], rmse_pop, r"(a) population effect $\theta$ (exact, HT)", (1.35, 6.8)),
+              (axes[1], rmse_bnd, r"(b) boundary effect $\beta_0$ (first-order)", (17, 6.6))]
+    out = {}
+    for ax, rmse, title, label_xy in panels:
+        z = np.clip(np.log10(rmse), -2.5, 1.0)
         pc = ax.pcolormesh(inv_tau, log_n, z, cmap="viridis_r", shading="auto", vmin=-2.5, vmax=1.0,
                            rasterized=True)
-        ax.contourf(inv_tau, log_n, (rmse <= DELTA).astype(float), levels=[0.5, 1.5],
-                    hatches=["////"], colors="none")
-        ax.contour(inv_tau, log_n, rmse, levels=[DELTA], colors="white", linewidths=2.0)
+        ax.contour(inv_tau, log_n, rmse, levels=[DELTA], colors="white", linewidths=2.2)
+        ax.text(*label_xy, rf"RMSE $\leq {DELTA:g}$", fontsize=8.5, color="black", bbox=BOX)
         ax.contour(inv_tau, log_n, loss, levels=LOSS_LEVELS, colors="#f0f0f0", linewidths=0.9,
                    linestyles="--")
-        for lev in LOSS_LEVELS:                      # label each loss contour at the right edge
+        for lev in LOSS_LEVELS:
             y = np.log10(lev / ph.loss_1.to_numpy()[-1])
             if log_n[0] < y < log_n[-1]:
-                ax.text(inv_tau[-1] * 0.93, y + 0.12, rf"$R_n={lev:g}$", ha="right", va="bottom",
-                        fontsize=6.5, color="black",
-                        bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.8))
+                ax.text(inv_tau[-1] * 0.9, y + 0.1, rf"$R_n={lev:g}$", ha="right", va="bottom",
+                        fontsize=7.5, bbox=BOX)
         feas = rmse <= DELTA
-        if feas.any():                               # smallest exploration loss meeting the precision
-            i, j = np.unravel_index(np.argmin(np.where(feas, loss, np.inf)), loss.shape)
-            ax.plot(inv_tau[j], log_n[i], marker="*", ms=11, color="#ffd92f", mec="black", mew=0.7,
-                    zorder=5)
-            right = j > len(inv_tau) // 2
-            ax.annotate(rf"min $R_n\approx{loss[i, j]:.3g}$", (inv_tau[j], log_n[i]),
-                        xytext=(-8 if right else 6, -14), textcoords="offset points", fontsize=7,
-                        ha="right" if right else "left",
-                        bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
+        i, j = np.unravel_index(np.argmin(np.where(feas, loss, np.inf)), loss.shape)
+        ax.plot(inv_tau[j], log_n[i], marker="*", ms=12, color="#ffd92f", mec="black", mew=0.7, zorder=5)
+        right = j > len(inv_tau) // 2
+        ax.annotate(rf"smallest loss $\approx{loss[i, j]:.3g}$", (inv_tau[j], log_n[i]),
+                    xytext=(-8 if right else 8, -16), textcoords="offset points", fontsize=8,
+                    ha="right" if right else "left", bbox=BOX)
         ax.set_xscale("log")
-        ax.set_xlabel(r"sharpness $1/\tau$ (one common temperature)")
-        ax.set_title(title)
-    # first-order approximation checked by Monte Carlo only where n*tau >= 3 (run.py firstorder)
-    y3 = np.log10(3 * inv_tau)                       # the curve n*tau = 3, i.e. log10 n = log10(3/tau)
+        ax.set_xlabel(r"policy sharpness $1/\tau$")
+        ax.set_title(title, loc="left")
+        ax.set_ylim(log_n[0], log_n[-1])
+        out["population" if ax is axes[0] else "boundary"] = dict(
+            min_loss=float(loss[i, j]), log10_n=float(log_n[i]), inv_tau=float(inv_tau[j]))
+    y3 = np.log10(3 * inv_tau)
     show = y3 > log_n[0]
     axes[1].plot(inv_tau[show], y3[show], color="black", lw=1.1, ls=":")
     axes[1].fill_between(inv_tau[show], log_n[0], y3[show], color="white", alpha=0.35, lw=0)
-    j = int(np.argmax(show)) + (len(inv_tau) - int(np.argmax(show))) // 2
-    axes[1].text(inv_tau[j], max(y3[j] - 0.3, log_n[0] + 0.15), r"$n\tau<3$", fontsize=7, ha="center",
-                 va="top", bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.8))
-    for ax in axes:
-        ax.set_ylim(log_n[0], log_n[-1])
+    axes[1].text(inv_tau[-1] * 0.9, log_n[0] + 0.15, r"$n\tau<3$", fontsize=8, ha="right", va="bottom",
+                 bbox=BOX)
     axes[0].set_ylabel(r"$\log_{10} n$")
-    cb = fig.colorbar(pc, ax=axes, shrink=0.9, pad=0.01)
+    cb = fig.colorbar(pc, ax=axes, shrink=0.92, pad=0.01)
     cb.set_label(r"$\log_{10}$ RMSE")
-    os.makedirs(FIGS, exist_ok=True)
-    fig.savefig(os.path.join(FIGS, "fig2_separation_map.pdf"), dpi=300)
-    plt.close(fig)
-
-    # numbers quoted with the figure
-    feas_pop, feas_bnd = rmse_pop <= DELTA, rmse_bnd <= DELTA
-    def argmin_point(feas):
-        i, j = np.unravel_index(np.argmin(np.where(feas, loss, np.inf)), loss.shape)
-        return dict(min_loss=float(loss[i, j]), log10_n=float(log_n[i]), inv_tau=float(inv_tau[j]))
-    out = dict(delta=DELTA, grid_log10_n=[float(log_n[0]), float(log_n[-1])],
-               grid_inv_tau=[float(inv_tau[0]), float(inv_tau[-1])],
-               population=argmin_point(feas_pop), boundary=argmin_point(feas_bnd))
-    with open(os.path.join(RES, "fig1_numbers.json"), "w") as fh:
-        json.dump(out, fh, indent=2)
+    save(fig, "fig2_separation_map.pdf")
+    out.update(delta=DELTA, grid_log10_n=[float(log_n[0]), float(log_n[-1])],
+               grid_inv_tau=[float(inv_tau[0]), float(inv_tau[-1])])
     return out
 
 
-def figure2():
+# ------------------------------------------------------------------ Figure 3 and A1
+def figure_costs(delta, name, width=4.3):
+    rows = pd.read_csv(os.path.join(RES, "costs.csv"))
+    sel = rows[np.isclose(rows.delta, delta)].sort_values("n")
+    fig, ax = plt.subplots(figsize=(width, 3.0), constrained_layout=True)
+    for col, lab, color, marker in (("R_common_temperature", "one common temperature", ORANGE, "o"),
+                                    ("R_uniform", "uniform mixing", BLUE, "s"),
+                                    ("R_optimal", "gap-based allocation", GREEN, "^")):
+        ax.loglog(sel.n, sel[col], label=lab, color=color, marker=marker, markersize=4.5, lw=1.8)
+    ax.set_title(rf"fixed sparse-exploration criterion $V_{{\rm sp}}={delta:g}^2$", loc="left")
+    ax.set_xlabel(r"deployment size $n$")
+    ax.set_ylabel(r"cumulative exploration loss $R_n$")
+    ax.grid(which="major", color=".9", lw=.6)
+    ax.legend(loc="upper left", frameon=False)
+    save(fig, name)
+
+
+# ------------------------------------------------------------------ Figure 4 and A2
+def figure_sweep():
     cu = pd.read_csv(os.path.join(RES, "curve.csv")).sort_values("inv_tau")
     x = cu.inv_tau.to_numpy()
     n = int(cu.n.iloc[0])
-    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.7), constrained_layout=True)
+    reps = int(cu.reps.iloc[0])
 
+    fig, axes = plt.subplots(1, 2, figsize=(TEXTWIDTH, 2.9), constrained_layout=True)
     ax = axes[0]
-    ax.plot(x, cu.ht_sd_exact, color=C_POP, lw=1.3, label=r"HT, exact SD")
-    ax.plot(x, cu.aipw_oracle_sd_exact, color=C_AIPW, lw=1.3, ls="-.", label=r"oracle AIPW, exact SD")
-    ax.plot(x, cu.bnd_rmse_first_order, color=C_BND, lw=1.3, label=r"boundary, first-order")
-    ax.plot(x, cu.ht_rmse_mc, "o", color=C_POP, ms=3.5, mfc="none", label="HT, MC")
-    ax.plot(x, cu.aipw_rmse_mc, "s", color=C_AIPW, ms=3.2, mfc="none", label="fitted AIPW, MC")
-    ax.plot(x, cu.bnd_rmse_mc, "^", color=C_BND, ms=3.5, mfc="none", label="boundary, MC")
+    for key, col, mk, lab in (("ht", C_POP, "o", r"HT for $\theta$"),
+                              ("aipw", C_AIPW, "s", r"fitted AIPW for $\theta$"),
+                              ("bnd", C_BND, "^", r"boundary estimator for $\beta_0$")):
+        ax.errorbar(x, cu[f"{key}_coverage"], yerr=1.96 * cu[f"{key}_coverage_mcse"], fmt=mk + "-",
+                    color=col, ms=4, mfc="none", lw=1.0, capsize=1.5, label=lab)
+    ax.axhline(0.95, color="grey", lw=0.8, ls=":")
+    ax.set_ylim(-0.02, 1.04)
+    ax.set_ylabel("Wald coverage")
+    ax.set_title("(a) coverage of 95% intervals", loc="left")
+    ax.legend(loc="center left", bbox_to_anchor=(0.0, 0.45), frameon=False)
+    top = ax.secondary_xaxis("top", functions=(lambda v: n / np.maximum(v, 1e-12),
+                                               lambda v: n / np.maximum(v, 1e-12)))
+    top.set_xlabel(r"$n\tau$", fontsize=8.5)
+    ax = axes[1]
+    ax.plot(x, cu.loss_exact, color=C_LOSS, lw=1.6, label=r"exploration loss $R_n$")
+    ax.plot(x, cu.loss_mc, "D", color=C_LOSS, ms=3.5, mfc="none")
+    ax.plot(x, cu.offgreedy_exact, color=C_OFF, lw=1.6, ls="--", label="off-greedy actions")
+    ax.plot(x, cu.offgreedy_mc, "v", color=C_OFF, ms=3.5, mfc="none")
+    ax.set_yscale("log")
+    ax.set_title("(b) exploration (lines exact, markers MC)", loc="left")
+    ax.legend(loc="lower left", frameon=False)
+    for a in axes:
+        a.set_xscale("log")
+        a.set_xlabel(r"policy sharpness $1/\tau$")
+    save(fig, "fig4_temperature_sweep.pdf")
+
+    fig, ax = plt.subplots(figsize=(TEXTWIDTH * 0.8, 3.2), constrained_layout=True)
+    ax.plot(x, cu.ht_sd_exact, color=C_POP, lw=1.4, label="HT: exact SD")
+    ax.plot(x, cu.aipw_oracle_sd_exact, color=C_AIPW, lw=1.4, ls="-.", label="oracle AIPW (true regression): exact SD")
+    ax.plot(x, cu.bnd_rmse_first_order, color=C_BND, lw=1.4, label="boundary estimator: first-order RMSE")
+    ax.plot(x, cu.ht_rmse_mc, "o", color=C_POP, ms=4, mfc="none", label="HT: Monte Carlo RMSE")
+    ax.plot(x, cu.aipw_rmse_mc, "s", color=C_AIPW, ms=4, mfc="none", label="fitted AIPW: Monte Carlo RMSE")
+    ax.plot(x, cu.bnd_rmse_mc, "^", color=C_BND, ms=4, mfc="none", label="boundary estimator: Monte Carlo RMSE")
+    ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_ylim(5e-3, 1e4)
-    ax.set_ylabel("RMSE / SD")
-    ax.set_title("(a) error")
-    fig.legend(*ax.get_legend_handles_labels(), loc="lower center", ncol=6, frameon=False, fontsize=7,
-               bbox_to_anchor=(0.5, -0.09))
-
-    ax = axes[1]
-    for key, col, mk, lab in (("ht", C_POP, "o", r"HT for $\theta$"), ("aipw", C_AIPW, "s", r"AIPW (fitted) for $\theta$"),
-                              ("bnd", C_BND, "^", r"boundary for $\beta_0$")):
-        ax.errorbar(x, cu[f"{key}_coverage"], yerr=1.96 * cu[f"{key}_coverage_mcse"], fmt=mk, color=col,
-                    ms=3.5, mfc="none", lw=0.8, capsize=1.5, label=lab)
-    ax.axhline(0.95, color="grey", lw=0.8, ls=":")
-    ax.set_ylim(0, 1.02)
-    ax.set_ylabel("Wald coverage (MC)")
-    ax.set_title("(b) coverage")
-    ax.legend(loc="center left", bbox_to_anchor=(0.0, 0.42), frameon=False)
-
-    ax = axes[2]
-    ax.plot(x, cu.loss_exact, color=C_LOSS, lw=1.3, label=r"loss $R_n$, exact")
-    ax.plot(x, cu.loss_mc, "D", color=C_LOSS, ms=3, mfc="none")
-    ax.plot(x, cu.offgreedy_exact, color="#7b3294", lw=1.3, ls="--", label="off-greedy actions, exact")
-    ax.plot(x, cu.offgreedy_mc, "v", color="#7b3294", ms=3, mfc="none")
-    ax.set_yscale("log")
-    ax.set_title("(c) exploration")
-    ax.legend(loc="lower left", frameon=False)
-
-    for ax in axes:
-        ax.set_xscale("log")
-        ax.set_xlabel(r"$1/\tau$")
-    fig.suptitle(rf"Common temperature, $n={n:,}$, {int(cu.reps.iloc[0]):,} replications per $\tau$",
-                 fontsize=9)
-    fig.savefig(os.path.join(FIGS, "fig4_temperature_sweep.pdf"), dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    ax.set_xlabel(r"policy sharpness $1/\tau$")
+    ax.set_ylabel("RMSE or SD")
+    ax.set_title(rf"error diagnostics, $n={n:,}$, {reps:,} replications per $\tau$", loc="left")
+    ax.legend(loc="upper left", frameon=False, fontsize=7.8)
+    save(fig, "figA2_temperature_sweep_error.pdf")
 
 
 if __name__ == "__main__":
-    os.makedirs(FIGS, exist_ok=True)
     mech = figure_mechanism()
     with open(os.path.join(RES, "fig_mechanism_numbers.json"), "w") as fh:
         json.dump(mech, fh, indent=2)
-    print(mech)
-    figure_costs()
-    print(figure1())
+    fmap = figure_map()
+    with open(os.path.join(RES, "fig1_numbers.json"), "w") as fh:     # file name kept for the table script
+        json.dump(fmap, fh, indent=2)
+    figure_costs(0.1, "fig3_exploration_costs.pdf")
+    figure_costs(0.03, "figA1_exploration_costs_small_delta.pdf")
     if os.path.exists(os.path.join(RES, "curve.csv")):
-        figure2()
+        figure_sweep()
+    print(mech)
+    print(fmap)
     print("figures written to", FIGS)

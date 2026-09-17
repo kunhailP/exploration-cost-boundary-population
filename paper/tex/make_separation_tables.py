@@ -83,7 +83,7 @@ def main():
                   curveInvTauMax=f"{hi.inv_tau:.0f}", curvePopCovHi=f(hi.ht_coverage, 3),
                   curveAipwCovHi=f(hi.aipw_coverage, 3), curveBndCovHi=f(hi.bnd_coverage, 3),
                   curvePopCovLo=f(lo.ht_coverage, 3), curveBndCovLo=f(lo.bnd_coverage, 3),
-                  curveHtMcRmseHi=f(hi.ht_rmse_mc, 2), curveHtExactSdHiExp=str(exp10),
+                  curveNtauMin=f"{hi.n_tau:,.0f}".replace(",", "{,}"), curveHtMcRmseHi=f(hi.ht_rmse_mc, 2), curveHtExactSdHiExp=str(exp10),
                   curveLossHi=f(hi.loss_exact, 1), curveLossLo=f"{lo.loss_exact:,.0f}".replace(",", "{,}"))
 
     with open(os.path.join(OUT, "separation_numbers.tex"), "w") as fh:

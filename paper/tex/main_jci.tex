@@ -113,6 +113,14 @@ rather than strategy $0$ across the full context population, holding the
 generator fixed. Estimating one well does not substitute for estimating the
 other.
 
+That local and population effects differ, and that limited overlap makes
+average effects hard to estimate, are familiar facts. What this paper adds is a
+comparison of the two targets inside one outcome model and on one cost scale:
+the boundary effect admits valid inference while the cumulative cost of
+exploration tends to zero, whereas no estimator learns the population effect
+uniformly without divergent cost. Estimability becomes a statement about what
+an experiment must pay for.
+
 We price learning in the deployer's own currency. Each time the logged
 strategy differs from the one the deployer's objective prefers, the deployer
 gives up an operational value gap $g(h)$. The cumulative sum is the
@@ -287,6 +295,17 @@ and an operational value gap $g(h)\ge0$, the value its objective loses by
 choosing $\bar a(h)=1-a^*(h)$. We write $g=\phi(|\Delta|)$ when the gap is a
 function of the score.
 
+\paragraph{Running example.} A conversational system chooses between presenting
+evidence ($A=1$) and asking a question ($A=0$). A reward model scores both
+strategies given the conversation so far, $H$; $\Delta(H)$ is the difference of
+the two scores and the system logs the probability $e(H)$ with which it chose
+evidence. The operational gap $g(H)$ is the loss in the deployer's own
+objective, for example predicted engagement, from using the lower-scoring
+strategy. The outcome $Y$ is the person's attitude after the conversation,
+measured separately and not used by the policy. The generator that writes the
+message under each strategy is held fixed. The theory below does not use
+anything specific to language models beyond this structure.
+
 \paragraph{Designs and notation for probabilities.} We use two probabilities
 and keep them distinct:
 \[
@@ -318,6 +337,67 @@ temperature, the overlap-weighted effect
 $\beta_{\ov,\tau}=\E[\omega_\tau(H)c(H)]/\E[\omega_\tau(H)]$ with
 $\omega_\tau=e_\tau(1-e_\tau)$ \cite{li2018balancing} is a third,
 temperature-indexed, target; we use it only as an intermediate object.
+
+%=============================================================================
+\section{The result in brief}\label{sec:brief}
+
+Take a one-dimensional score, $\Delta(h)=h$, and outcome laws whose mean
+functions are bounded and Lipschitz near the decision boundary
+(Assumption~\ref{ass:D}). Let the logs come from one common temperature
+$\tau_n=n^{-\zeta}$ with $\zeta\in(1/2,1)$.
+\begin{enumerate}[label=(\roman*),leftmargin=2em,itemsep=2pt]
+\item The boundary effect $\beta_0$ has an asymptotically valid Wald interval,
+and the cumulative exploration loss $R_n$ tends to zero
+(Theorem~\ref{thm:boundary}).
+\item In the same model, outcome laws with equal boundary effects but different
+population effects cannot be distinguished whenever $R_n\to0$, and uniformly
+consistent estimation of $\theta$ requires divergent worst-case loss
+(Theorem~\ref{thm:separation}).
+\item Without extrapolation structure, precision $\delta$ for $\theta$, uniformly
+over the model, requires worst-case loss of order at least
+$(\E\sqrt g)^2/\delta^2$, whichever design and estimator are used, and this does
+not decrease with $n$ (Theorem~\ref{thm:info}).
+\end{enumerate}
+Sections~\ref{sec:boundary}--\ref{sec:separation} state these results
+precisely, and Section~\ref{sec:temperature} draws the consequences for
+temperature as a design lever.
+
+Figure~\ref{fig:map} illustrates the separation for the design used in
+Section~\ref{sec:sims}, with risks computed by numerical integration: the exact
+risk of the Horvitz--Thompson estimator of $\theta$, which is unbiased, and a
+first-order approximation to the root mean squared error of the boundary
+estimator, $\{(\beta_{\ov,\tau}-\beta_0)^2+V_1/n\}^{1/2}$, where $V_1$ is its
+linearization variance from the proof of Theorem~\ref{thm:boundary}. Across
+\foCells{} Monte Carlo checks with $n\tau\ge3$ (\foReps{} replications each),
+the Monte Carlo root mean squared error is between \foRatioMin{} and
+\foRatioMax{} times the approximation; at $n\tau=\foNtauTiny$ the ratio is
+\foRatioTiny{}, so the approximation overstates the error there. Under one
+common temperature, the population effect reaches root mean squared error
+$\figDelta$ only where the exploration loss is large: on the plotted grid the
+smallest such loss is about $\figPopMinLoss$. The boundary effect reaches the
+same precision with loss $\figBndMinLoss$ at the edge of the grid, and with less
+loss at larger $n$ and sharper policies.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figs/fig2_separation_map.pdf}
+\caption{Root mean squared error (colour, $\log_{10}$ scale) under one
+common temperature $\tau$ for the design of Section~\ref{sec:sims}: $H\sim
+U(-1,1)$, $\Delta(h)=h$, $g(h)=|h|$, $c(h)=1+|h|$, unit noise. (a) Exact
+root mean squared error of the Horvitz--Thompson estimator of the population
+effect $\theta$. (b) First-order approximation, including the exact bias, to
+the root mean squared error of the estimator of Theorem~\ref{thm:boundary} for
+the boundary effect $\beta_0$; the shaded region below the dotted line has
+$n\tau<3$, where Monte Carlo checks show the approximation overstates the
+error. White curves enclose the regions with root mean
+squared error at most $\figDelta$. Dashed curves are levels of the cumulative
+exploration loss $R_n=n\E[g(H)q_\tau(H)]$. Stars mark the smallest loss that
+attains the precision on the plotted grid ($1\le1/\tau\le300$,
+$10^2\le n\le10^9$). Panel (a) concerns one estimator under one outcome law; the
+lower bounds for all estimators are Theorems~\ref{thm:info}
+and~\ref{thm:separation}.}
+\label{fig:map}
+\end{figure}
 
 %=============================================================================
 \section{Boundary effects at vanishing exploration loss}\label{sec:boundary}
@@ -389,6 +469,16 @@ which grows because $n\tau_n\to\infty$; the loss nevertheless vanishes,
 $R_n=O(n\tau_n^2)$, with asymptotic equivalence in the strong form of
 (D5), because these actions occur ever closer to the boundary,
 where the value gap is small.
+
+Assumption (D5) is what makes boundary exploration cheap: the deployer's
+objective is nearly indifferent near the boundary, so choosing the unpreferred
+strategy there costs little. It does not describe a fixed cost per exploratory
+action, such as a review or payment incurred whenever the policy deviates. If
+every off-greedy action costs at least $c_0>0$, then
+$R_n\ge c_0\,n\E[q_{\tau_n}(H)]=2\log2\,c_0f(0)\,n\tau_n(1+o(1))$, which diverges
+under the condition $n\tau_n\to\infty$ of Theorem~\ref{thm:boundary}. Under such
+costs, boundary inference also requires divergent cumulative loss, and the
+separation below does not hold in this form.
 
 %=============================================================================
 \section{Population effects require paid exploration}\label{sec:population}
@@ -504,42 +594,7 @@ $\M_D$, nor any uniform guarantee on the boundary side. If a submodel lets
 boundary data identify $\theta$, the perturbation family is excluded and
 (S2)--(S3) do not apply. Proofs are in Appendix~\ref{app:separation}.
 
-Figure~\ref{fig:map} illustrates the separation for the design used in
-Section~\ref{sec:sims}, with risks computed by numerical integration: the exact
-risk of the Horvitz--Thompson estimator of $\theta$, which is unbiased, and a
-first-order approximation to the root mean squared error of the boundary
-estimator, $\{(\beta_{\ov,\tau}-\beta_0)^2+V_1/n\}^{1/2}$, where $V_1$ is its
-linearization variance from the proof of Theorem~\ref{thm:boundary}. Across
-\foCells{} Monte Carlo checks with $n\tau\ge3$ (\foReps{} replications each),
-the Monte Carlo root mean squared error is between \foRatioMin{} and
-\foRatioMax{} times the approximation; at $n\tau=\foNtauTiny$ the ratio is
-\foRatioTiny{}, so the approximation overstates the error there. Under one
-common temperature, the population effect reaches root mean squared error
-$\figDelta$ only where the exploration loss is large: on the plotted grid the
-smallest such loss is about $\figPopMinLoss$. The boundary effect reaches the
-same precision with loss $\figBndMinLoss$ at the edge of the grid, and with less
-loss at larger $n$ and sharper policies.
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figs/fig2_separation_map.pdf}
-\caption{Root mean squared error (colour, $\log_{10}$ scale) under one
-common temperature $\tau$ for the design of Section~\ref{sec:sims}: $H\sim
-U(-1,1)$, $\Delta(h)=h$, $g(h)=|h|$, $c(h)=1+|h|$, unit noise. (a) Exact
-root mean squared error of the Horvitz--Thompson estimator of the population
-effect $\theta$. (b) First-order approximation, including the exact bias, to
-the root mean squared error of the estimator of Theorem~\ref{thm:boundary} for
-the boundary effect $\beta_0$; the shaded region below the dotted line has
-$n\tau<3$, where Monte Carlo checks show the approximation overstates the
-error. Hatched regions, bounded by white curves, have root mean
-squared error at most $\figDelta$. Dashed curves are levels of the cumulative
-exploration loss $R_n=n\E[g(H)q_\tau(H)]$. Stars mark the smallest loss that
-attains the precision on the plotted grid ($1\le1/\tau\le300$,
-$10^2\le n\le10^9$). Panel (a) concerns one estimator under one outcome law; the
-lower bounds for all estimators are Theorems~\ref{thm:info}
-and~\ref{thm:separation}.}
-\label{fig:map}
-\end{figure}
 
 %=============================================================================
 \section{Temperature as an exploration device}\label{sec:temperature}
@@ -652,7 +707,9 @@ guarantee of Proposition~\ref{prop:achieve}. At fixed $\delta$, the expected num
 bounded for uniform mixing and the gap-based design, so increasing $n$
 alone does not establish nominal Wald coverage for those designs. This
 bounded-count statement does not apply to the common-temperature design.
-Figure~\ref{fig:costs} shows the allocation costs across deployment sizes. In a
+Figure~\ref{fig:costs} shows the allocation costs across deployment sizes at
+$V_{\rm sp}=0.1^2$; Figure~\ref{fig:costs-small} in Appendix~\ref{app:figures}
+repeats it at $V_{\rm sp}=0.03^2$ with the same ordering. In a
 two-context example the bound \eqref{eq:info} evaluates to \finiteBound{}
 against the asymptotic constant \finiteConstant{}, and the common-temperature
 loss has local growth exponent \finiteSlope{} against the predicted $0.8$.
@@ -668,13 +725,13 @@ observed coverage. ``Explored'' is the mean number of off-greedy actions.}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{figs/fig3_exploration_costs.pdf}
-\caption{Exploration loss as deployment size increases, using the archived
-deterministic calculations with $H\sim U(-1,1)$, $g(h)=|h|$, $\sigma^2=1$,
-and fixed $V_{\rm sp}=\delta^2$. Curves share the same sparse-exploration
-criterion, not verified equal finite-sample MSE. Context-dependent
-temperature implements the gap-based probabilities and gives the same curve.
-The panels have different vertical ranges.}
+\includegraphics[width=0.7\textwidth]{figs/fig3_exploration_costs.pdf}
+\caption{Cumulative exploration loss as deployment size increases, from
+closed-form calculations with $H\sim U(-1,1)$, $g(h)=|h|$, $\sigma^2=1$ and
+the sparse-exploration criterion fixed at $V_{\rm sp}=0.1^2$. Designs are
+matched on this criterion, not on realized finite-sample error. A
+context-dependent temperature implements the gap-based probabilities and gives
+the same curve.}
 \label{fig:costs}
 \end{figure}
 
@@ -693,7 +750,15 @@ Wald coverage of the population effect falls from \curvePopCovLo{} at $1/\tau=1$
 to \curvePopCovHi{} (Horvitz--Thompson) and \curveAipwCovHi{} (augmented
 estimator with a fitted linear working model) at $1/\tau=\curveInvTauMax$. Over the same range, coverage of the
 boundary effect rises from \curveBndCovLo{} to \curveBndCovHi{}, and the
-exploration loss falls from \curveLossLo{} to \curveLossHi{}. The Monte Carlo
+exploration loss falls from \curveLossLo{} to \curveLossHi{}. Boundary coverage
+improves over this range because $n\tau$ stays at least \curveNtauMin{}. This is
+not a monotone property of sharpening: at fixed $n$, lowering the temperature
+further drives $n\tau$ toward zero, and the boundary interval then fails as
+well, as Theorem~\ref{thm:boundary} requires $n\tau_n\to\infty$ and
+Table~\ref{tab:boundary} shows at $n\tau\approx\smallNtau$.
+
+Error diagnostics for the same runs are in Figure~\ref{fig:sweep-error} in
+Appendix~\ref{app:figures}. The Monte Carlo
 error of the Horvitz--Thompson estimator understates its exact standard
 deviation once the policy is sharp: at $1/\tau=\curveInvTauMax$ the Monte Carlo root mean
 squared error of the Horvitz--Thompson estimator is \curveHtMcRmseHi{}, while its
@@ -711,18 +776,13 @@ with it.
 \centering
 \includegraphics[width=\textwidth]{figs/fig4_temperature_sweep.pdf}
 \caption{Common temperature at fixed $n=\curveN$, \curveReps{} replications
-per temperature, same design as Figure~\ref{fig:map}. (a) Lines: exact standard
-deviation of the Horvitz--Thompson estimator and of an oracle augmented
-estimator that uses the true regression (a reference, not an estimator used
-in the simulation), both for $\theta$, and the first-order approximation to
-the root mean squared error of the boundary estimator of $\beta_0$. Markers:
-Monte Carlo root mean squared error of the Horvitz--Thompson estimator, of the
-augmented estimator with a fitted linear working model, and of the boundary
-estimator. (b) Wald coverage with 95\% Monte Carlo
-intervals. Boundary coverage is low while $n\tau^3$ is large, as
-Theorem~\ref{thm:boundary}(iv) requires. (c) Exploration loss $R_n$ and expected
-number of off-greedy actions; lines are exact expectations, markers Monte
-Carlo.}
+per temperature, same design as Figure~\ref{fig:map}. (a) Wald coverage with
+95\% Monte Carlo intervals for the population effect (Horvitz--Thompson and
+augmented estimator with a fitted linear working model) and for the boundary
+effect; the top axis shows $n\tau$. Boundary coverage is low while $n\tau^3$
+is large, as Theorem~\ref{thm:boundary}(iv) requires. (b) Cumulative
+exploration loss $R_n$ and expected number of off-greedy actions; lines are
+exact expectations, markers Monte Carlo.}
 \label{fig:sweep}
 \end{figure}
 
@@ -805,6 +865,29 @@ The author reviewed all content and takes full responsibility for it.
 
 \appendix
 \input{appendix_separation_proofs.tex}
+
+\section{Additional figures}\label{app:figures}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figs/figA1_exploration_costs_small_delta.pdf}
+\caption{As Figure~\ref{fig:costs}, with the sparse-exploration criterion fixed
+at $V_{\rm sp}=0.03^2$.}
+\label{fig:costs-small}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figs/figA2_temperature_sweep_error.pdf}
+\caption{Error diagnostics for the runs of Figure~\ref{fig:sweep}. Lines: exact
+standard deviation of the Horvitz--Thompson estimator and of an oracle augmented
+estimator that uses the true regression (a reference, not an estimator used in
+the simulation), both for $\theta$, and the first-order approximation to the
+root mean squared error of the boundary estimator of $\beta_0$. Markers: Monte
+Carlo root mean squared error of the Horvitz--Thompson estimator, the augmented
+estimator with a fitted linear working model, and the boundary estimator.}
+\label{fig:sweep-error}
+\end{figure}
 
 \end{document}
 
