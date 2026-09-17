@@ -187,11 +187,11 @@ are closest to our design conclusions. They mix any bandit algorithm with a
 Bernoulli design whose weight decays more slowly than $t^{-1/4}$ and obtain
 anytime-valid confidence sequences for the average effect. Their setting has no
 contexts and no cost for the Bernoulli assignments; we charge each departure from
-the deployer's preferred action by its value gap, and Theorem~ef{thm:info} shows
-that some mixing of this kind cannot be avoided by any design that learns the
-population effect uniformly. Hadad et al.~\cite{hadad2021confidence} build confidence
-intervals for policy values from bandit data when assignment probabilities decay at a
-polynomial rate. Under a sharpening policy the probabilities decay exponentially in
+the deployer's preferred action by its value gap, and Theorem~\ref{thm:info} bounds from below
+the loss that any design must incur to learn the population effect uniformly.
+Hadad et al.~\cite{hadad2021confidence} build confidence
+intervals for policy values from bandit data when assignment probabilities decay no faster
+than a polynomial rate. Under a sharpening policy the probabilities decay exponentially in
 $|\Delta|/\tau$ away from the boundary, and our boundary estimator targets
 $\beta_0$ rather than a policy value. Adaptive designs have also been proposed for
 efficient estimation of average effects~\cite{kato2020efficient}, for policy
