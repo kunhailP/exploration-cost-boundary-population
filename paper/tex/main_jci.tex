@@ -181,34 +181,42 @@ shows that fixed-effects regression weights stratum effects by $p_j(1-p_j)$; und
 sharpening policy almost all of that weight sits at the boundary.
 
 The trade-off between reward and estimation has mostly been studied for bandits
-without contexts~\cite{erraqabi2017trading,simchilevi2023multi}, where the
-guarantees concern particular algorithms. Liang and Bojinov~\cite{liang2023mixture}
-are closest to our design conclusions. They mix any bandit algorithm with a
-Bernoulli design whose weight decays more slowly than $t^{-1/4}$ and obtain
-anytime-valid confidence sequences for the average effect. Their setting has no
-contexts and no cost for the Bernoulli assignments; we charge each departure from
-the deployer's preferred action by its value gap, and Theorem~\ref{thm:info} bounds from below
-the loss that any design must incur to learn the population effect uniformly.
-Hadad et al.~\cite{hadad2021confidence} build confidence
-intervals for policy values from bandit data when assignment probabilities decay no faster
-than a polynomial rate. Under a sharpening policy the probabilities decay exponentially in
-$|\Delta|/\tau$ away from the boundary, and our boundary estimator targets
-$\beta_0$ rather than a policy value. Adaptive designs have also been proposed for
-efficient estimation of average effects~\cite{kato2020efficient}, for policy
-choice~\cite{kasy2021adaptive} and for applications in political
-science~\cite{offerwestort2021adaptive}; in those designs assignment serves
-estimation or choice, whereas here it is fixed by the deployer's objective.
+without contexts. Erraqabi et al.~\cite{erraqabi2017trading} formalize a trade-off
+between cumulative reward and the accuracy of arm estimates, and Simchi-Levi and
+Wang~\cite{simchilevi2023multi} give a lower bound on the combination of regret and
+estimation error that holds for every admissible policy and estimator. Our lower
+bounds are of the same general kind. They differ in measuring cost by a
+context-specific operational value gap and in comparing, within one model, the cost
+of learning a boundary effect with that of learning the population effect. Liang and
+Bojinov~\cite{liang2023mixture} are closest to our design conclusions. They mix any
+bandit algorithm with a Bernoulli design whose weight decays more slowly than
+$t^{-1/4}$, obtain asymptotically anytime-valid confidence sequences for the average
+effect, and analyse the regret that the mixing adds. In our setting the cost of a
+departure from the preferred action is the value gap $g(h)$ from the deployer's
+objective, which varies with the context and is distinct from the outcome being
+estimated, and Theorem~\ref{thm:info} bounds from below the loss that any design must
+incur to learn the population effect uniformly. Hadad et
+al.~\cite{hadad2021confidence} build confidence intervals for policy values from
+bandit data when assignment probabilities decay no faster than a polynomial rate.
+Under a sharpening policy the probabilities decay exponentially in $|\Delta|/\tau$
+away from the boundary, and our boundary estimator targets $\beta_0$ rather than a
+policy value. Adaptive designs have also been proposed for efficient estimation of
+average effects~\cite{kato2020efficient}, for policy choice~\cite{kasy2021adaptive}
+and for applications in political science~\cite{offerwestort2021adaptive}; in those
+designs assignment serves estimation or choice, whereas here it is fixed by the
+deployer's objective.
+
+Other work measures the cost of exploration against a baseline.
 Conservative bandits~\cite{wu2016conservative} keep cumulative reward above that of a
 baseline policy, and Wan, Kveton and Song~\cite{wan2022safe} optimize exploration for
-policy evaluation under a value constraint; both measure cost against a baseline, as
-we do, but their guarantees concern the regret or evaluation error of the proposed
-algorithms. Tucker and Joachims~\cite{tucker2023variance} and Douglas, Persson and
-Provost~\cite{douglas2026logging} choose logging policies to reduce the variance of
-off-policy estimates, and Koppel et al.~\cite{koppel2025explore} balance regret
-against the quality of average-effect estimates in contextual bandits. The allocation $q\propto g^{-1/2}$ is optimum
-stratified allocation with costs~\cite{cochran1977sampling} and appears for factorial
-experiments in~\cite{ravichandran2024optimal}; what we add is that its constant bounds
-every estimator and adaptive design. Li and Imai~\cite{li2024neyman} compare ways of
+policy evaluation under a value constraint. Tucker and Joachims~\cite{tucker2023variance}
+and Douglas, Persson and Provost~\cite{douglas2026logging} choose logging policies to
+reduce the variance of off-policy estimates, and Koppel et al.~\cite{koppel2025explore}
+balance regret against the quality of average-effect estimates in contextual bandits.
+The allocation $q\propto g^{-1/2}$ is optimum stratified allocation with
+costs~\cite{cochran1977sampling} and appears for factorial experiments
+in~\cite{ravichandran2024optimal}; what we add is that its constant bounds every
+estimator and adaptive design. Li and Imai~\cite{li2024neyman} compare ways of
 evaluating an individualized rule without charging for departures from it, and
 Cesa-Bianchi et al.~\cite{cesabianchi2017boltzmann} show that Boltzmann exploration
 with one schedule can fail for regret. Theorem~\ref{thm:common} is an analogue for
