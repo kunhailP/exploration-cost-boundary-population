@@ -152,7 +152,7 @@ two members that coincide near the boundary but differ in the population
 effect have total variation distance tending to zero, so no estimator is
 consistent for the population effect at both; and uniform consistency for the
 population effect requires $\sup R_n\to\infty$. Figure~\ref{fig:map} shows the
-separation in exact risks for a simple design.
+separation in computed risks for a simple design.
 \item \emph{An information--exploration inequality}
 (Theorem~\ref{thm:info}). In the model of all bounded mean functions, for
 every estimator and every adaptive or non-adaptive design, the product of
@@ -504,8 +504,16 @@ $\M_D$, nor any uniform guarantee on the boundary side. If a submodel lets
 boundary data identify $\theta$, the perturbation family is excluded and
 (S2)--(S3) do not apply. Proofs are in Appendix~\ref{app:separation}.
 
-Figure~\ref{fig:map} illustrates the separation with exact risks, computed by
-numerical integration, for the design used in Section~\ref{sec:sims}. Under one
+Figure~\ref{fig:map} illustrates the separation for the design used in
+Section~\ref{sec:sims}, with risks computed by numerical integration: the exact
+risk of the Horvitz--Thompson estimator of $\theta$, which is unbiased, and a
+first-order approximation to the root mean squared error of the boundary
+estimator, $\{(\beta_{\ov,\tau}-\beta_0)^2+V_1/n\}^{1/2}$, where $V_1$ is its
+linearization variance from the proof of Theorem~\ref{thm:boundary}. Across
+\foCells{} Monte Carlo checks with $n\tau\ge3$ (\foReps{} replications each),
+the Monte Carlo root mean squared error is between \foRatioMin{} and
+\foRatioMax{} times the approximation; at $n\tau=\foNtauTiny$ the ratio is
+\foRatioTiny{}, so the approximation overstates the error there. Under one
 common temperature, the population effect reaches root mean squared error
 $\figDelta$ only where the exploration loss is large: on the plotted grid the
 smallest such loss is about $\figPopMinLoss$. The boundary effect reaches the
@@ -515,12 +523,15 @@ loss at larger $n$ and sharper policies.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figs/fig2_separation_map.pdf}
-\caption{Exact root mean squared error (colour, $\log_{10}$ scale) under one
+\caption{Root mean squared error (colour, $\log_{10}$ scale) under one
 common temperature $\tau$ for the design of Section~\ref{sec:sims}: $H\sim
-U(-1,1)$, $\Delta(h)=h$, $g(h)=|h|$, $c(h)=1+|h|$, unit noise. (a) The
-Horvitz--Thompson estimator of the population effect $\theta$. (b) The
-estimator of Theorem~\ref{thm:boundary} for the boundary effect $\beta_0$,
-including its bias. Hatched regions, bounded by white curves, have root mean
+U(-1,1)$, $\Delta(h)=h$, $g(h)=|h|$, $c(h)=1+|h|$, unit noise. (a) Exact
+root mean squared error of the Horvitz--Thompson estimator of the population
+effect $\theta$. (b) First-order approximation, including the exact bias, to
+the root mean squared error of the estimator of Theorem~\ref{thm:boundary} for
+the boundary effect $\beta_0$; the shaded region below the dotted line has
+$n\tau<3$, where Monte Carlo checks show the approximation overstates the
+error. Hatched regions, bounded by white curves, have root mean
 squared error at most $\figDelta$. Dashed curves are levels of the cumulative
 exploration loss $R_n=n\E[g(H)q_\tau(H)]$. Stars mark the smallest loss that
 attains the precision on the plotted grid ($1\le1/\tau\le300$,
@@ -680,29 +691,38 @@ Theorem~\ref{thm:boundary} is asymptotic.
 sharpens a common temperature, with \curveReps{} replications per temperature.
 Wald coverage of the population effect falls from \curvePopCovLo{} at $1/\tau=1$
 to \curvePopCovHi{} (Horvitz--Thompson) and \curveAipwCovHi{} (augmented
-estimator) at $1/\tau=\curveInvTauMax$. Over the same range, coverage of the
+estimator with a fitted linear working model) at $1/\tau=\curveInvTauMax$. Over the same range, coverage of the
 boundary effect rises from \curveBndCovLo{} to \curveBndCovHi{}, and the
 exploration loss falls from \curveLossLo{} to \curveLossHi{}. The Monte Carlo
-error of the population estimators understates their exact standard deviation
-once the policy is sharp: at $1/\tau=\curveInvTauMax$ the Monte Carlo root mean
+error of the Horvitz--Thompson estimator understates its exact standard
+deviation once the policy is sharp: at $1/\tau=\curveInvTauMax$ the Monte Carlo root mean
 squared error of the Horvitz--Thompson estimator is \curveHtMcRmseHi{}, while its
 exact standard deviation is of order $10^{\curveHtExactSdHiExp}$. Its variance is
 carried by rare, very large terms that the replications do not observe. For the
-population estimators, the exact curves rather than the Monte Carlo points
-describe the error.
+Horvitz--Thompson estimator, the exact standard deviation rather than the Monte
+Carlo points describes the error. The oracle augmented estimator, which uses
+the true regression, is shown only as an exact reference; its variance is not
+the variance of the fitted augmented estimator whose Monte Carlo results are
+plotted. For the boundary estimator the line is the first-order approximation
+described in Section~\ref{sec:separation}, and the Monte Carlo points agree
+with it.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figs/fig4_temperature_sweep.pdf}
 \caption{Common temperature at fixed $n=\curveN$, \curveReps{} replications
 per temperature, same design as Figure~\ref{fig:map}. (a) Lines: exact standard
-deviation of the Horvitz--Thompson and augmented (true regression) estimators
-of $\theta$, and exact root mean squared error of the boundary estimator of
-$\beta_0$. Markers: Monte Carlo root mean squared error; the augmented
-estimator uses a linear working model. (b) Wald coverage with 95\% Monte Carlo
+deviation of the Horvitz--Thompson estimator and of an oracle augmented
+estimator that uses the true regression (a reference, not an estimator used
+in the simulation), both for $\theta$, and the first-order approximation to
+the root mean squared error of the boundary estimator of $\beta_0$. Markers:
+Monte Carlo root mean squared error of the Horvitz--Thompson estimator, of the
+augmented estimator with a fitted linear working model, and of the boundary
+estimator. (b) Wald coverage with 95\% Monte Carlo
 intervals. Boundary coverage is low while $n\tau^3$ is large, as
 Theorem~\ref{thm:boundary}(iv) requires. (c) Exploration loss $R_n$ and expected
-number of off-greedy actions; lines are exact, markers Monte Carlo.}
+number of off-greedy actions; lines are exact expectations, markers Monte
+Carlo.}
 \label{fig:sweep}
 \end{figure}
 

@@ -70,6 +70,12 @@ def main():
     macros.update(figPopMinLoss=f"{f1['population']['min_loss']:.0f}",
                   figBndMinLoss=f"{f1['boundary']['min_loss']:.2f}",
                   figDelta=f"{f1['delta']:.1f}")
+    fo, m = load("firstorder"); commits.add(m["git_commit"])
+    ok = fo[fo.n_tau >= 3]
+    small = fo[fo.n_tau < 3].sort_values("n_tau")
+    macros.update(foRatioMin=f(ok.ratio_mc_over_first_order.min(), 3), foRatioMax=f(ok.ratio_mc_over_first_order.max(), 3),
+                  foCells=str(len(ok)), foReps=f"{int(fo.reps.iloc[0]):,}".replace(",", "{,}"),
+                  foRatioTiny=f(small.ratio_mc_over_first_order.iloc[0], 2), foNtauTiny=f(small.n_tau.iloc[0], 2))
     hi = curve.sort_values("inv_tau").iloc[-1]
     lo = curve.sort_values("inv_tau").iloc[0]
     exp10 = int(f"{hi.ht_sd_exact:.1e}".split("e")[1])

@@ -128,12 +128,15 @@ def figure1():
         ax.set_xlabel(r"sharpness $1/\tau$ (one common temperature)")
         ax.set_title(title)
     # first-order approximation checked by Monte Carlo only where n*tau >= 3 (run.py firstorder)
-    y3 = np.log10(3 * inv_tau)
-    axes[1].plot(inv_tau, y3, color="black", lw=1.1, ls=":")
-    axes[1].fill_between(inv_tau, log_n[0], y3, color="white", alpha=0.35, lw=0)
-    axes[1].text(inv_tau[len(inv_tau) // 2], np.log10(3 * inv_tau[len(inv_tau) // 2]) - 0.35,
-                 r"$n\tau<3$", fontsize=7, ha="center",
-                 bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.8))
+    y3 = np.log10(3 * inv_tau)                       # the curve n*tau = 3, i.e. log10 n = log10(3/tau)
+    show = y3 > log_n[0]
+    axes[1].plot(inv_tau[show], y3[show], color="black", lw=1.1, ls=":")
+    axes[1].fill_between(inv_tau[show], log_n[0], y3[show], color="white", alpha=0.35, lw=0)
+    j = int(np.argmax(show)) + (len(inv_tau) - int(np.argmax(show))) // 2
+    axes[1].text(inv_tau[j], max(y3[j] - 0.3, log_n[0] + 0.15), r"$n\tau<3$", fontsize=7, ha="center",
+                 va="top", bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.8))
+    for ax in axes:
+        ax.set_ylim(log_n[0], log_n[-1])
     axes[0].set_ylabel(r"$\log_{10} n$")
     cb = fig.colorbar(pc, ax=axes, shrink=0.9, pad=0.01)
     cb.set_label(r"$\log_{10}$ RMSE")
@@ -161,17 +164,18 @@ def figure2():
     fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.7), constrained_layout=True)
 
     ax = axes[0]
-    ax.plot(x, cu.ht_sd_exact, color=C_POP, lw=1.3, label=r"HT: exact SD")
-    ax.plot(x, cu.aipw_oracle_sd_exact, color=C_AIPW, lw=1.3, ls="-.", label=r"oracle AIPW: exact SD")
-    ax.plot(x, cu.bnd_rmse_first_order, color=C_BND, lw=1.3, label=r"boundary: first-order RMSE")
-    ax.plot(x, cu.ht_rmse_mc, "o", color=C_POP, ms=3.5, mfc="none", label="HT: MC RMSE")
-    ax.plot(x, cu.aipw_rmse_mc, "s", color=C_AIPW, ms=3.2, mfc="none", label="AIPW (fitted): MC RMSE")
-    ax.plot(x, cu.bnd_rmse_mc, "^", color=C_BND, ms=3.5, mfc="none", label="boundary: MC RMSE")
+    ax.plot(x, cu.ht_sd_exact, color=C_POP, lw=1.3, label=r"HT, exact SD")
+    ax.plot(x, cu.aipw_oracle_sd_exact, color=C_AIPW, lw=1.3, ls="-.", label=r"oracle AIPW, exact SD")
+    ax.plot(x, cu.bnd_rmse_first_order, color=C_BND, lw=1.3, label=r"boundary, first-order")
+    ax.plot(x, cu.ht_rmse_mc, "o", color=C_POP, ms=3.5, mfc="none", label="HT, MC")
+    ax.plot(x, cu.aipw_rmse_mc, "s", color=C_AIPW, ms=3.2, mfc="none", label="fitted AIPW, MC")
+    ax.plot(x, cu.bnd_rmse_mc, "^", color=C_BND, ms=3.5, mfc="none", label="boundary, MC")
     ax.set_yscale("log")
-    ax.set_ylim(5e-3, 1e6)
+    ax.set_ylim(5e-3, 1e4)
     ax.set_ylabel("RMSE / SD")
     ax.set_title("(a) error")
-    ax.legend(loc="upper left", frameon=False, fontsize=6.3, ncol=1)
+    fig.legend(*ax.get_legend_handles_labels(), loc="lower center", ncol=6, frameon=False, fontsize=7,
+               bbox_to_anchor=(0.5, -0.09))
 
     ax = axes[1]
     for key, col, mk, lab in (("ht", C_POP, "o", r"HT for $\theta$"), ("aipw", C_AIPW, "s", r"AIPW (fitted) for $\theta$"),
@@ -198,7 +202,7 @@ def figure2():
         ax.set_xlabel(r"$1/\tau$")
     fig.suptitle(rf"Common temperature, $n={n:,}$, {int(cu.reps.iloc[0]):,} replications per $\tau$",
                  fontsize=9)
-    fig.savefig(os.path.join(FIGS, "fig4_temperature_sweep.pdf"), dpi=300)
+    fig.savefig(os.path.join(FIGS, "fig4_temperature_sweep.pdf"), dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 

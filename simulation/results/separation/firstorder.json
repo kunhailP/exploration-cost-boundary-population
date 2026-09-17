@@ -1,27 +1,25 @@
 {
   "out": "/tmp/claude-0/-root/ed2d4681-8e2c-4e6e-8b73-4017b98f4af8/scratchpad/ecbp/simulation/results/separation",
-  "n": 100000,
+  "ns": [
+    100,
+    1000,
+    10000
+  ],
   "inv_taus": [
     1,
-    2,
     3,
-    5,
-    7,
     10,
-    14,
-    20,
     30,
-    50,
-    80,
-    120
+    100,
+    300
   ],
-  "reps": 1000,
-  "seed": 20260921,
+  "reps": 4000,
+  "seed": 20260922,
   "procs": 64,
-  "subcommand": "curve",
+  "subcommand": "firstorder",
   "git_commit": "7f720962faead4965e349b138dedcec21268189e",
   "numpy": "1.26.3",
   "python": "3.11.10",
-  "wall_seconds": 142.1,
-  "finished": "2026-09-17T09:55:56"
+  "wall_seconds": 5.3,
+  "finished": "2026-09-17T09:53:33"
 }
