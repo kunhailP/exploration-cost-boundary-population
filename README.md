@@ -1,6 +1,6 @@
-# The exploration cost of boundary and population effects
+# The exploration cost of learning boundary and population causal effects
 
-Replication materials for the manuscript **"The exploration cost of boundary and population effects"**
+Replication materials for the manuscript **"The exploration cost of learning boundary and population causal effects"**
 by Kunwoo Park (Department of Political Science and International Relations, Kookmin University;
 ORCID [0009-0007-9067-8964](https://orcid.org/0009-0007-9067-8964)).
 
