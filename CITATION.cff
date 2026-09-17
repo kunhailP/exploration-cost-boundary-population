@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+title: >-
+  The exploration cost of boundary and population effects
+message: If you use this material, please cite the paper.
+type: software
+authors:
+  - family-names: Park
+    given-names: Kunwoo
+    affiliation: >-
+      Department of Political Science and International Relations, Kookmin University
+    orcid: https://orcid.org/0009-0007-9067-8964
+repository-code: https://github.com/kunhailP/exploration-cost-boundary-population
+license: MIT

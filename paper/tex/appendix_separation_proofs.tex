@@ -1,0 +1,232 @@
+% Proofs for main_jci.tex. Plain-text versions with the same content:
+% theory/separation/{theorem_D,theorems_A_B_C,corollary_S}.md
+
+\section{Proof of Theorem~\ref{thm:boundary}}\label{app:boundary}
+
+Write $e=e_\tau(H)=\sgm(H/\tau)=\Prob(A=1\mid H)$ and $\omega=e(1-e)=K(H/\tau)$ with $K(u)=\exp(u)/\{1+\exp(u)\}^2$,
+and $m_\tau=\E\omega$. We use
+\begin{gather*}
+\int K=1,\qquad \int|u|K(u)\,du=2\log2,\qquad \int K(u)\sgm(u)\,du=\tfrac12,\\
+K(u)\le \exp(-|u|),\qquad \int_0^\infty v\,\sgm(-v)\,dv=\tfrac{\pi^2}{12}.
+\end{gather*}
+
+\paragraph{Step 1 (kernel integrals).} For $\varrho$ bounded and continuous at $0$,
+$j\ge1$ and $r,s\ge0$, substituting $h=\tau u$ and using dominated convergence
+with dominating function $\|\varrho\|_\infty\bar fK(u)$,
+\[
+\E[K(H/\tau)^j(1-e)^r\,e^s\,\varrho(H)]=\tau f(0)\varrho(0)\int K^j\sgm(-u)^r\sgm(u)^s\,du+o(\tau).
+\]
+In particular $m_\tau=\tau f(0)(1+o(1))$.
+
+\paragraph{Step 2 (bias).} $\beta_{\ov,\tau}-\beta_0=\E[\omega\{c(H)-c(0)\}]/m_\tau$.
+On $|H|\le u_0$, $|c(h)-c(0)|\le2L|h|$ and
+$\E[\omega|H|]\le\bar f\tau^2\int|u|K=2\log2\,\bar f\tau^2$. On $|H|>u_0$,
+$\omega\le \exp(-u_0/\tau)$ and $|c(h)-c(0)|\le4B$. Hence
+$|\beta_{\ov,\tau}-\beta_0|\le(4\log2\,L\bar f\tau^2+4B\exp(-u_0/\tau))/m_\tau
+=(4\log2\,L\bar f/f(0))\tau(1+o(1))$.
+
+\paragraph{Step 3 (linearization).} Let $\bar\mu_a=\E[\omega\mu_a]/m_\tau$, so
+$\bar\mu_1-\bar\mu_0=\beta_{\ov,\tau}$. Since $\E[w_1\mid H]=\omega$ and
+$\E[w_1Y\mid H]=\omega\mu_1$, $\E[w_1(Y-\bar\mu_1)]=0$, and likewise for arm
+$0$. Define $T_a=n^{-1}\sum_iw_{ai}(Y_i-\bar\mu_a)/m_\tau$ and
+$\xi_i=\{w_{1i}(Y_i-\bar\mu_1)-w_{0i}(Y_i-\bar\mu_0)\}/m_\tau$. Then
+$\hat m_a-\bar\mu_a=(m_\tau/\hat D_a)T_a$ and $\E\xi=0$. Because $w_1w_0=0$ and
+$\E[A(1-e)^2\mid H]=\omega(1-e)$,
+\[
+s_n^2:=\Var\xi=m_\tau^{-2}\E\big[\omega\{(1-e)(\sigma_1^2+(\mu_1-\bar\mu_1)^2)+e(\sigma_0^2+(\mu_0-\bar\mu_0)^2)\}\big].
+\]
+By Step 1, $\bar\mu_a\to\mu_a(0)$; the terms in $(\mu_a-\bar\mu_a)^2$ are
+$o(\tau)$ by dominated convergence; and the variance terms equal
+$\tau f(0)\sigma_a^2(0)/2+o(\tau)$. Hence
+$s_n^2=\{\sigma_1^2(0)+\sigma_0^2(0)\}/\{2\tau f(0)\}(1+o(1))$.
+
+\paragraph{Step 4 (central limit theorem).} Since $0\le w_a\le1$, $w_a^4\le
+w_a$, and $\E[(Y-\bar\mu_a)^4\mid A,H]\le C(M,B)$, we get
+$\E[w_a^4(Y-\bar\mu_a)^4]\le Cm_\tau$ and $\E\xi^4\le C'm_\tau^{-3}$. The
+Lyapunov ratio $n^{-1}\E\xi^4/s_n^4=O((n\tau)^{-1})\to0$, so
+$n^{-1/2}\sum\xi_i/s_n\Rightarrow N(0,1)$. Also
+$\Var(\hat D_a)/m_\tau^2\le1/(nm_\tau)\to0$, so $\hat D_a/m_\tau\to1$ in
+probability and $m_\tau/\hat D_a-1=O_p((n\tau)^{-1/2})$. Now
+\[
+\hat\beta-\beta_{\ov,\tau}=(T_1-T_0)+(m_\tau/\hat D_1-1)T_1-(m_\tau/\hat D_0-1)T_0,
+\]
+with $T_1-T_0=n^{-1}\sum\xi_i$ and $T_a=O_p((n\tau)^{-1/2})$. The remainder is
+$O_p((n\tau)^{-1})=o_p(s_n/\sqrt n)$, and Slutsky's lemma gives (i).
+
+\paragraph{Step 5 (variance estimator).} Write
+$\xi_{ai}=w_{ai}(Y_i-\bar\mu_a)/m_\tau$. First, $n^{-1}\sum\xi_i^2/s_n^2$ has
+mean one and variance at most $\E\xi^4/(ns_n^4)=O((n\tau)^{-1})$. Second,
+\[
+\hat\psi_{1i}-\xi_{1i}=w_{1i}(Y_i-\bar\mu_1)(1/\hat D_1-1/m_\tau)+w_{1i}(\bar\mu_1-\hat m_1)/\hat D_1 .
+\]
+The mean square of the first term is
+$(n^{-1}\sum\xi_{1i}^2)(m_\tau/\hat D_1-1)^2=O_p(s_n^2)O_p((n\tau)^{-1})$.
+For the second, $w_1^2\le w_1$ gives mean square at most
+$(\hat m_1-\bar\mu_1)^2/\hat D_1$; by Step 4 and $\hat D_1=\tau f(0)(1+o_p(1))$
+this is $O_p(1/(n\tau^2))$, which is $O_p((n\tau)^{-1})$ relative to
+$s_n^2\asymp\tau^{-1}$. Arm $0$ is identical. By Minkowski's and the
+Cauchy--Schwarz inequalities, $|n^{-1}\sum\hat\psi_i^2-n^{-1}\sum\xi_i^2|=o_p(s_n^2)$,
+which gives (iii).
+
+\paragraph{Step 6 (centering at $\beta_0$).}
+$(\beta_{\ov,\tau}-\beta_0)/(s_n/\sqrt n)=O(\tau)O((n\tau)^{1/2})=O((n\tau^3)^{1/2})$.
+With (i), (iii) and Slutsky's lemma this gives (iv).
+
+\paragraph{Step 7 (exploration loss).} The off-greedy probability is
+$q_\tau(h)=\sgm(-|h|/\tau)$, which equals $e_\tau(h)$ for $h<0$ and $1-e_\tau(h)$ for $h>0$. On $|h|\le u_0$,
+$n\E[\phi(|H|)\sgm(-|H|/\tau)]\le n\bar\kappa\bar f\cdot2\tau^2\int_0^\infty
+v\sgm(-v)dv=n\bar\kappa\bar f\tau^2\pi^2/6$, and the rest is at most
+$n\bar G\exp(-u_0/\tau)$. In the strong form, on $v\le u_0/\tau$,
+$\phi(\tau v)/\tau\to\kappa v$ and $f(\tau v)\to f(0)$ with dominating function
+$\bar\kappa v\bar f\sgm(-v)$, which gives the asymptotic equality. For
+$\tau_n=n^{-\zeta}$: $n\tau_n\to\infty$ iff $\zeta<1$; $n\tau_n^3\to0$ iff
+$\zeta>1/3$; $n\tau_n^2\to0$ iff $\zeta>1/2$. \qed
+
+\paragraph{Smoother effects.} If $|c(h)-c(0)-c'(0)h|\le M_2h^2$ and $f$ is
+$L_f$-Lipschitz near $0$, then
+$\E[\omega H]=\tau^2\int uK(u)\{f(\tau u)-f(0)\}du=O(\tau^3)$ up to an
+exponentially small tail, and the quadratic remainder contributes at most
+$M_2\bar f\tau^3\int u^2K/m_\tau$; the bias is $O(\tau^2)$. Differentiability of
+$c$ alone is not enough: a bounded effect equal to $c(h)=1+|h|^{3/2}$
+near zero gives bias
+$\tau^{3/2}\int|u|^{3/2}K(u)du\,(1+o(1))$.
+
+%-----------------------------------------------------------------------------
+\section{Proofs for Section~\ref{sec:population}}\label{app:population}
+
+\paragraph{Proof of Theorem~\ref{thm:info}.}
+\emph{Submodel.} For $\vartheta\in[-B,B]^K$ set $\mu^\vartheta_{a^*(h)}(h)=0$,
+and on $S_k$ set $\mu^\vartheta_{\bar a(h)}(h)=s_k\vartheta_k$ with $s_k=+1$ if
+$\bar a=1$ on $S_k$ and $s_k=-1$ otherwise; elsewhere
+$\mu^\vartheta_{\bar a(h)}(h)=0$. Then $\mu^\vartheta\in\M(B,\sigma)$ and
+$\theta(\mu^\vartheta)=\sum_kf_k\vartheta_k$.
+
+\emph{Information.} The sample density is
+$\prod_idF(H_i)\,\kappa_i(A_i\mid H_i,\mathcal F_{i-1})\,\varphi_\sigma(Y_i-\mu^\vartheta_{A_i}(H_i))$,
+where the assignment kernels $\kappa_i$ are known functions of observed data.
+The score for $\vartheta_k$ is
+$\sum_i\mathbf 1\{H_i\in S_k,A_i=\bar a(H_i)\}s_k(Y_i-s_k\vartheta_k)/\sigma^2$.
+Its summands are martingale differences, so the Fisher information matrix is
+diagonal with $I_k(\vartheta)=\E_\vartheta N_k/\sigma^2$, where
+$N_k=\sum_i\mathbf 1\{H_i\in S_k,A_i=\bar a(H_i)\}$.
+
+\emph{van Trees.} Take the product prior with marginal density
+$B^{-1}\cos^2(\pi x/(2B))$ on $[-B,B]$, whose Fisher information is $J=\pi^2/B^2$.
+With $\bar N_k=\int\E_\vartheta N_k\,\lambda(d\vartheta)$, the multivariate van
+Trees inequality \cite{gill1995applications}, maximized over the direction
+vector, gives
+\[
+\sup_{\M(B,\sigma)}\E(\hat\theta-\theta)^2\ge\sum_k\frac{f_k^2}{\bar N_k/\sigma^2+J}=\sum_k\frac{f_k\sigma^2}{a_k},
+\qquad a_k=\frac{\bar N_k+\sigma^2J}{f_k}.
+\]
+
+\emph{Cauchy--Schwarz and loss.} Writing
+$\sigma\sum_kf_k\sqrt{g_k}=\sum_k\sqrt{f_kg_ka_k}\cdot\sigma\sqrt{f_k/a_k}$,
+\[
+\sigma^2\Big(\sum_kf_k\sqrt{g_k}\Big)^2\le\Big(\sum_kf_kg_ka_k\Big)\Big(\sum_kf_k\sigma^2/a_k\Big).
+\]
+Here $\sum_kf_kg_ka_k=\sum_kg_k\bar N_k+\sigma^2J\sum_kg_k$, and since $g\ge g_k$
+on $S_k$, $\sum_kg_kN_k\le\sum_ig(H_i)\mathbf 1\{A_i=\bar a(H_i)\}$, so
+$\sum_kg_k\bar N_k\le\sup R_n$. This proves \eqref{eq:info}.
+
+\emph{Consequences.} With $K=1$ and $S_1=\{g\ge\gamma\}\cap\{a^*=j\}$ of positive
+mass, \eqref{eq:info} gives
+$\sup R_n\ge g_1\{\sigma^2f_1^2/\sup\E(\hat\theta-\theta)^2-\sigma^2\pi^2/B^2\}\to\infty$.
+For the constant, fix a partition into level sets of $g$ intersected with the
+two greedy sides; \eqref{eq:info} gives
+$\liminf\delta_n^2\sup R_n\ge\sigma^2(\sum f_k\sqrt{g_k})^2$, and lower sums
+$\sum F(S)\inf_S\sqrt g$ increase to $\E\sqrt g$ as the level mesh shrinks. \qed
+
+\paragraph{Proof of Proposition~\ref{prop:achieve}.} The Horvitz--Thompson
+estimator is unbiased with variance at most
+$n^{-1}(\sigma^2+B^2)\E[1/e+1/(1-e)]=n^{-1}(\sigma^2+B^2)\E[1/q+1/(1-q)]\le n^{-1}(\sigma^2+B^2)(\E[1/q]+2)$,
+since $\{e,1-e\}=\{q,1-q\}$ and $q\le1/2$. Pointwise $1/q=\max\{2,\sqrt g/c_n\}\le\sqrt g/c_n+2$,
+and the choice of $c_n$ gives $\E[1/q]+2\le n\delta_n^2/(\sigma^2+B^2)$. The
+loss is $n\E[gq]\le nc_n\E\sqrt g$. For uniform mixing with
+$C=\sigma^2+B^2$ and $q=C/(n\delta_n^2-2C)\le1/2$, the same variance bound
+gives $C(1/q+2)/n=\delta_n^2$, and the loss is $nq\E[g]=C\E[g]\,n/(n\delta_n^2-2C)$.
+Without the correction, $q=C/(n\delta_n^2)$ gives risk $C/\{nq(1-q)\}>\delta_n^2$
+at $\mu_0=\mu_1\equiv B$, where the bound is attained. \qed
+
+%-----------------------------------------------------------------------------
+\section{Proof of Theorem~\ref{thm:separation}}\label{app:separation}
+
+The function $b$ satisfies $0\le b\le1$, is $\pi/(u_2-u_1)$-Lipschitz, vanishes on
+$(-\infty,u_1]$, and has $\E b(H)>0$ because $H$ has a density and
+$F([u_1,u_2])>0$. Hence $|tb|\le B$ and $tb$ is $L$-Lipschitz for
+$|t|\le t_{\max}$, so $\mu^t\in\M_D$; $c^t=tb$, $\beta_0(\mu^t)=0$, and
+$\theta(\mu^t)=t\E b(H)$. Every perturbed observation is off-greedy, since
+$a^*=1$ on $(0,\infty)$, with $H\in[u_1,u_2]$. Let
+$N=\sum_i\mathbf 1\{A_i=0,H_i\in[u_1,u_2]\}$.
+
+\emph{(S1)} is Theorem~\ref{thm:boundary}, because every member of $\M_D$
+satisfies Assumption~\ref{ass:D}.
+
+\emph{(S2).} The sample densities under $\mu^0$ and $\mu^t$ coincide on
+$E=\{N=0\}$, so $P_0(E)=P_t(E)$, and for any event $A$,
+$|P_0(A)-P_t(A)|=|P_0(A\cap E^c)-P_t(A\cap E^c)|\le\max\{P_0(E^c),P_t(E^c)\}=P_0(E^c)$.
+Thus $\TV\le P_0(N\ge1)\le\E_0N$. Because $g\ge\gamma$ $F$-almost surely on
+$[u_1,u_2]$ and $H_i\sim F$, $\gamma N\le\sum_ig(H_i)\mathbf 1\{A_i=\bar a(H_i)\}$
+almost surely, so $\E_0N\le R_n(\mu^0)/\gamma$. Le Cam's two-point argument with
+separation $t_1\E b$ gives the displayed bound.
+
+\emph{(S3).} The score of $t\mapsto\mu^t$ is
+$\sum_i\mathbf 1\{A_i=0\}(-b(H_i))(Y_i+tb(H_i))/\sigma^2$, with information
+$I(t)=\E_t\sum_i\mathbf 1\{A_i=0\}b(H_i)^2/\sigma^2\le\E_tN/\sigma^2\le R_n(\mu^t)/(\gamma\sigma^2)$.
+With the prior $t_{\max}^{-1}\cos^2(\pi t/(2t_{\max}))$ on $[-t_{\max},t_{\max}]$,
+whose information is $\pi^2/t_{\max}^2$, the van Trees inequality for
+$\psi(t)=t\E b$ gives the bound. \qed
+
+%-----------------------------------------------------------------------------
+\section{Proofs for Section~\ref{sec:temperature}}\label{app:temperature}
+
+\paragraph{Proof of Theorem~\ref{thm:common}.} Take the single cell
+$S=\{|\Delta|\ge D_{\max}-\eta',a^*=j\}$, with $j$ attaining $\nu=\nu_{\eta'}$. There
+$q_\tau\le \exp(-(D_{\max}-\eta')/\tau)$, so $\bar N\le n\nu \exp(-(D_{\max}-\eta')/\tau)$, and the van
+Trees step of Theorem~\ref{thm:info} with $K=1$ gives
+$\delta_n^2\ge \nu^2\sigma^2/(n\nu \exp(-(D_{\max}-\eta')/\tau)+\sigma^2\pi^2/B^2)$. Once
+$\delta_n^2\le \nu^2B^2/(2\pi^2)$, this forces
+$n\nu \exp(-(D_{\max}-\eta')/\tau)\ge \nu^2\sigma^2/(2\delta_n^2)$, that is,
+$\tau_n\ge(D_{\max}-\eta')/\log\{2n\delta_n^2/(\nu\sigma^2)\}$, where the logarithm is
+positive because $2n\delta_n^2>\nu\sigma^2$. Nothing here requires
+$\delta_n\to0$. On the other hand
+\[
+R_n=n\E[\phi(|\Delta|)\sgm(-|\Delta|/\tau)]
+\ge n\kappa f_{\min}\tau^2\int_0^{u_0/\tau}v\sgm(-v)\,dv
+\ge n\kappa f_{\min}c_0\min\{\tau,u_0\}^2 .
+\]
+Combining the two bounds proves the
+claim. With finitely many score values, the same argument gives
+$\tau\ge\Delta_{\max}/\log(Cn\delta^2)$ for $\delta$ small enough. The
+$\Delta_{\min}$ cell, with mass $f$, then contributes at least
+\[
+n f\phi(\Delta_{\min})\exp(-\Delta_{\min}/\tau)/2 . \qquad\qed
+\]
+
+\paragraph{Remark~\ref{rem:mixture}.} Write $u=|H|$, $r(u)=\sgm(-u)$ for the
+off-greedy probability at temperature $1$, and
+$q_n=w_nr+(1-w_n)\sgm(-nu)$ for the mixture. Since $q_n\ge w_nr$,
+$\E[1/q_n]/n\le\delta^2$ for $w_n=\E[1/r]/(n\delta^2)$, and
+$n\E[uq_n]\le\E[1/r]\E[ur]/\delta^2+O(1/n)$. With
+$w_n=\E[1/r]/\{n\delta_n^2/(\sigma^2+B^2)-2\}$ the Horvitz--Thompson risk is at
+most $\delta_n^2$ uniformly over $\M(B,\sigma)$.
+
+\paragraph{Proof of Proposition~\ref{prop:ctx}.} Solving
+$\sgm(-|\Delta|/\tau)=q$ gives the formula. If $g(h)=0$, then $q^*(h)=1/2$, which
+is implementable by $\tau=\infty$ (and by any $\tau$ when $\Delta(h)=0$). If
+$\Delta(h)\neq0$ and $g(h)>0$, then $q^*(h)=c_n/\sqrt{g(h)}<1/2$ once
+$c_n<\sqrt{g(h)}/2$, and
+$\log\{(1-q^*)/q^*\}=\log(1/c_n)+\tfrac12\log g(h)+\log(1-q^*)$ with
+$c_n\to0$, which gives the limit. \qed
+
+\paragraph{Proof of Lemma~\ref{lem:robust}.} With the cap slack, let
+$q=c/\sqrt{\hat g}$ and $\E[1/q]=T$. The loss is $n\E[\sqrt{\hat g}]\E[g/\sqrt{\hat g}]/T$, against
+$n(\E\sqrt g)^2/T$ for $\hat g=g$. With $s=(\hat g/g)^{1/2}\in[\sqrt a,\sqrt b]$
+and the probability measure $w\propto\sqrt g\,dF$, the ratio is
+$\E_w[s]\E_w[1/s]$, which Kantorovich's inequality bounds by
+$(\sqrt a+\sqrt b)^2/(4\sqrt{ab})=K(b/a)$. If $w$ has a set of mass one half,
+setting $s=\sqrt a$ there and $s=\sqrt b$ elsewhere attains the bound. With
+atoms the bound need not be attained: for $F=(0.99,0.01)$, $g=(1,100)$ and
+$\rho=36$, uniform mixing costs $1.675$ times the optimum, below $K(36)=2.042$,
+yet every admissible $\hat g$ costs at most $1.347$ times the optimum. \qed
+
