@@ -543,6 +543,35 @@ def cmd_rdcompare(args):
     save(pd.DataFrame(rows), "rdcompare", args, t0)
 
 
+def cmd_rdlimit(args):
+    """Probability limits of both boundary estimators in the rdcompare design (quadrature, no Monte Carlo).
+
+    With finite tau the assignment probability is continuous at 0, so the fuzzy RD estimator has no
+    discontinuity to exploit; its limit is the ratio of the population local-linear intercept gaps
+    of E[Y|H] = h + e_tau(h)(1 + |h|) and E[A|H] = e_tau(h), which differs from beta_0 = 1."""
+    t0 = time.time()
+    rows = []
+    for inv_tau in args.inv_taus:
+        e = lambda h: sig(h * inv_tau)
+        my = lambda h: h + e(h) * (1 + np.abs(h))
+        hh = np.linspace(-1, 1, 400001)
+        om = e(hh) * (1 - e(hh))
+        ow_limit = float(np.sum(om * (1 + np.abs(hh))) / np.sum(om))
+        for bw in args.bandwidths:
+            gaps = {}
+            for name, fun in (("y", my), ("a", e)):
+                icpt = []
+                for sgn in (1, -1):
+                    h = np.linspace(0, bw, 200001)[1:] * sgn
+                    k = 1 - np.abs(h) / bw
+                    X = np.column_stack([np.ones_like(h), h])
+                    icpt.append(np.linalg.solve((X.T * k) @ X, (X.T * k) @ fun(h))[0])
+                gaps[name] = icpt[0] - icpt[1]
+            rows.append(dict(inv_tau=inv_tau, bandwidth=bw, first_stage_gap=gaps["a"],
+                             rd_limit=gaps["y"] / gaps["a"], ow_limit=ow_limit, beta0=BETA0))
+    save(pd.DataFrame(rows), "rdlimit", args, t0)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", default=DEFAULT_OUT)
@@ -588,6 +617,10 @@ def main():
     s.add_argument("--reps", type=int, default=4000)
     s.add_argument("--seed", type=int, default=20260922)
     s.add_argument("--procs", type=int, default=min(64, os.cpu_count() or 8))
+
+    s = sub.add_parser("rdlimit"); s.set_defaults(func=cmd_rdlimit)
+    s.add_argument("--inv-taus", type=float, nargs="+", default=[10, 30, 120, 1000])
+    s.add_argument("--bandwidths", type=float, nargs="+", default=[0.05, 0.2])
 
     s = sub.add_parser("rdcompare"); s.set_defaults(func=cmd_rdcompare)
     s.add_argument("--n", type=int, default=100_000)
