@@ -1,0 +1,14 @@
+                 check         n  delta  weight_hot  design_variance  cum_loss    bound   tau     bias  bias_over_tau_1p5  bias_over_tau_2  uniform_over_optimal  worst_misspecified_over_optimal    K_rho
+B_mixture_temperatures   10000.0    0.1    0.027183         0.009997 46.362400 46.36232   NaN      NaN                NaN              NaN                   NaN                              NaN      NaN
+B_mixture_temperatures  100000.0    0.1    0.002718         0.010000 46.362328 46.36232   NaN      NaN                NaN              NaN                   NaN                              NaN      NaN
+B_mixture_temperatures 1000000.0    0.1    0.000272         0.010000 46.362321 46.36232   NaN      NaN                NaN              NaN                   NaN                              NaN      NaN
+   D_smoothness_remark       NaN    NaN         NaN              NaN       NaN      NaN 0.040 0.016274           2.034282        10.171408                   NaN                              NaN      NaN
+   D_smoothness_remark       NaN    NaN         NaN              NaN       NaN      NaN 0.020 0.005754           2.034282        14.384544                   NaN                              NaN      NaN
+   D_smoothness_remark       NaN    NaN         NaN              NaN       NaN      NaN 0.010 0.002034           2.034282        20.342817                   NaN                              NaN      NaN
+   D_smoothness_remark       NaN    NaN         NaN              NaN       NaN      NaN 0.005 0.000719           2.034282        28.769087                   NaN                              NaN      NaN
+      R_iff_with_atoms       NaN    NaN         NaN              NaN       NaN      NaN   NaN      NaN                NaN              NaN              1.674943                         1.347193 2.041667
+-> /tmp/claude-0/-root/ed2d4681-8e2c-4e6e-8b73-4017b98f4af8/scratchpad/ecbp/simulation/results/separation/audit.csv (+ .json)
+
+real	16m2.257s
+user	0m7.821s
+sys	15m59.704s

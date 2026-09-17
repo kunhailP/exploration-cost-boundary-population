@@ -1,0 +1,24 @@
+{
+  "out": "/tmp/claude-0/-root/ed2d4681-8e2c-4e6e-8b73-4017b98f4af8/scratchpad/ecbp/simulation/results/separation",
+  "zetas": [
+    0.6,
+    0.75
+  ],
+  "ns": [
+    10000,
+    100000,
+    1000000
+  ],
+  "reps_list": [
+    1000,
+    500,
+    200
+  ],
+  "seed": 20260918,
+  "subcommand": "boundary",
+  "git_commit": "ead391b1fc824d6eeed70dbfbe601e761d25e62f",
+  "numpy": "1.26.3",
+  "python": "3.11.10",
+  "wall_seconds": 37.9,
+  "finished": "2026-09-17T09:27:17"
+}

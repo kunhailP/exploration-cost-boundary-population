@@ -1,0 +1,16 @@
+                           kind            n        value      tau  local_slope
+                       A1_bound          NaN 5.188694e+01      NaN          NaN
+asymptotic_constant_closed_form          NaN 5.236068e+01      NaN          NaN
+           common_temperature_R       1000.0 6.538866e+01 0.358641          NaN
+           common_temperature_R      10000.0 2.838109e+02 0.189622     0.637527
+           common_temperature_R     100000.0 1.820388e+03 0.131620     0.807135
+           common_temperature_R    1000000.0 1.215045e+04 0.100979     0.824428
+           common_temperature_R   10000000.0 8.010939e+04 0.081927     0.819091
+           common_temperature_R  100000000.0 5.207063e+05 0.068924     0.812909
+           common_temperature_R 1000000000.0 3.349661e+06 0.059484     0.808408
+                predicted_slope          NaN 8.000000e-01      NaN          NaN
+-> /tmp/claude-0/-root/ed2d4681-8e2c-4e6e-8b73-4017b98f4af8/scratchpad/ecbp/simulation/results/separation/finite.csv (+ .json)
+
+real	0m0.420s
+user	0m0.917s
+sys	0m5.011s

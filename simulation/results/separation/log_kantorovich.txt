@@ -1,0 +1,10 @@
+   a   b     rho  worst_ratio   K_rho  uniform_over_optimal
+0.50   2     4.0       1.1250  1.1250              1.124997
+0.25   4    16.0       1.5625  1.5625              1.124997
+0.10  10   100.0       3.0250  3.0250              1.124997
+0.01 100 10000.0      25.5025 25.5025              1.124997
+-> /tmp/claude-0/-root/ed2d4681-8e2c-4e6e-8b73-4017b98f4af8/scratchpad/ecbp/simulation/results/separation/kantorovich.csv (+ .json)
+
+real	0m22.450s
+user	0m9.522s
+sys	0m17.053s

@@ -1,0 +1,9 @@
+ zeta       n      n_tau      tau  reps  kish_neff_per_arm  bias_beta0  bias_beta_ov    sd_mc  sd_pred  se_over_sd  coverage_se_hat  coverage_mc_sd  coverage_mcse      skew  excess_kurtosis
+  0.6   10000  39.810717 0.003981  3000          37.227695    0.005098     -0.000421 0.222113 0.224138    0.984734         0.936000        0.945000       0.004469  0.053184         0.198167
+  0.6  100000 100.000000 0.001000  3000          95.720057    0.005595      0.004208 0.140241 0.141421    1.000147         0.951333        0.952333       0.003928  0.017088        -0.011025
+  0.6 1000000 251.188643 0.000251  1000         244.264601    0.004448      0.004100 0.092258 0.089231    0.962598         0.934000        0.951000       0.007851 -0.024250         0.030189
+-> /tmp/claude-0/-root/ed2d4681-8e2c-4e6e-8b73-4017b98f4af8/scratchpad/ecbp/simulation/results/separation/coverage.csv (+ .json)
+
+real	1m17.146s
+user	1m17.175s
+sys	0m3.971s
