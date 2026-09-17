@@ -113,8 +113,7 @@ small where the policy is nearly indifferent and large where it is confident. Si
 $g$ comes from the deployer's objective rather than from the outcome under study, it
 is known when the design is chosen.
 
-Our main result is that the two targets have very different prices. With a single
-temperature that shrinks at a suitable rate, the boundary effect can be estimated
+With a single temperature that shrinks at a suitable rate, the boundary effect can be estimated
 with valid confidence intervals while the exploration loss goes to zero. In the same
 model, no design and no estimator learn the population effect uniformly unless the
 worst-case loss diverges. The ingredients are familiar: limited overlap, local
@@ -122,8 +121,8 @@ randomization at a threshold and cost-weighted allocation have all been studied.
 What is new is that both targets are treated in one model and on one cost scale,
 with lower bounds that hold for every estimator and every adaptive design. The
 contrast depends on a cost that vanishes at the boundary. If each deviation costs a
-fixed amount, boundary inference under a common temperature is expensive as well
-(Proposition~\ref{prop:gapshape}).
+fixed amount, the cumulative exploration loss of boundary inference under a common
+temperature also diverges (Proposition~\ref{prop:gapshape}).
 
 Figure~\ref{fig:separation} shows the construction behind the lower bound. The two
 outcome models agree near the boundary and differ only for the unpreferred action
@@ -181,19 +180,32 @@ Morgan and Zaslavsky~\cite{li2018balancing}, and Humphreys~\cite{humphreys2025bo
 shows that fixed-effects regression weights stratum effects by $p_j(1-p_j)$; under a
 sharpening policy almost all of that weight sits at the boundary.
 
-The tension between reward and estimation has mostly been studied for bandits
-without contexts~\cite{erraqabi2017trading,simchilevi2023multi}. Liang and
-Bojinov~\cite{liang2023mixture} mix any bandit algorithm with a Bernoulli design
-whose weight decays slowly, which keeps anytime-valid inference on the average
-effect; this is essentially the uniform mixing we recommend. Other work covers
-inference when propensities decay~\cite{hadad2021confidence}, adaptive designs for
-effect estimation and for policy choice~\cite{kato2020efficient,kasy2021adaptive},
-and their use in political science~\cite{offerwestort2021adaptive}. Closer to our
-notion of cost are conservative bandits~\cite{wu2016conservative}, safe exploration
-for policy evaluation~\cite{wan2022safe}, the design of logging policies for
-off-policy evaluation~\cite{tucker2023variance,douglas2026logging} and the balance
-between regret and effect estimation studied by Koppel et
-al.~\cite{koppel2025explore}. The allocation $q\propto g^{-1/2}$ is optimum
+The trade-off between reward and estimation has mostly been studied for bandits
+without contexts~\cite{erraqabi2017trading,simchilevi2023multi}, where the
+guarantees concern particular algorithms. Liang and Bojinov~\cite{liang2023mixture}
+are closest to our design conclusions. They mix any bandit algorithm with a
+Bernoulli design whose weight decays more slowly than $t^{-1/4}$ and obtain
+anytime-valid confidence sequences for the average effect. Their setting has no
+contexts and no cost for the Bernoulli assignments; we charge each departure from
+the deployer's preferred action by its value gap, and Theorem~ef{thm:info} shows
+that some mixing of this kind cannot be avoided by any design that learns the
+population effect uniformly. Hadad et al.~\cite{hadad2021confidence} build confidence
+intervals for policy values from bandit data when assignment probabilities decay at a
+polynomial rate. Under a sharpening policy the probabilities decay exponentially in
+$|\Delta|/\tau$ away from the boundary, and our boundary estimator targets
+$\beta_0$ rather than a policy value. Adaptive designs have also been proposed for
+efficient estimation of average effects~\cite{kato2020efficient}, for policy
+choice~\cite{kasy2021adaptive} and for applications in political
+science~\cite{offerwestort2021adaptive}; in those designs assignment serves
+estimation or choice, whereas here it is fixed by the deployer's objective.
+Conservative bandits~\cite{wu2016conservative} keep cumulative reward above that of a
+baseline policy, and Wan, Kveton and Song~\cite{wan2022safe} optimize exploration for
+policy evaluation under a value constraint; both measure cost against a baseline, as
+we do, but their guarantees concern the regret or evaluation error of the proposed
+algorithms. Tucker and Joachims~\cite{tucker2023variance} and Douglas, Persson and
+Provost~\cite{douglas2026logging} choose logging policies to reduce the variance of
+off-policy estimates, and Koppel et al.~\cite{koppel2025explore} balance regret
+against the quality of average-effect estimates in contextual bandits. The allocation $q\propto g^{-1/2}$ is optimum
 stratified allocation with costs~\cite{cochran1977sampling} and appears for factorial
 experiments in~\cite{ravichandran2024optimal}; what we add is that its constant bounds
 every estimator and adaptive design. Li and Imai~\cite{li2024neyman} compare ways of
@@ -375,7 +387,7 @@ The three rate conditions say that the boundary sample grows ($n\tau_n\to\infty$
 $\zeta<1$), that the bias is small next to the standard error ($n\tau_n^3\to0$,
 $\zeta>1/3$) and that the loss vanishes ($n\tau_n^2\to0$, $\zeta>1/2$). At
 $\zeta=1/2$ the interval is still valid and the loss stays bounded. The error is
-$O_p((n\tau_n)^{-1/2}+\tau_n)$; we have not tried to show that this rate is optimal.
+$O_p((n\tau_n)^{-1/2}+\tau_n)$; optimality of this rate is not established here.
 A smoother effect helps only with more structure. If $c$ is $C^{1,1}$ and $f$ is
 Lipschitz near zero, the bias is $O(\tau^2)$ and (iv) needs only $n\tau_n^5\to0$, but
 an effect equal to $1+|h|^{3/2}$ near zero, which is differentiable, still has bias
@@ -428,8 +440,9 @@ requires $\sup R_n\to\infty$; and if $\sup\E(\hat\theta-\theta)^2\le\delta_n^2\t
 then $\liminf_n\delta_n^2\sup R_n\ge\sigma^2(\E\sqrt{g(H)})^2$.
 \end{theorem}
 
-The sample size does not appear in \eqref{eq:info}, so a larger deployment does
-not make the population effect cheaper to learn. At a fixed precision $\delta$, the
+The sample size does not appear in \eqref{eq:info}, so the lower bound on the
+exploration loss needed for a given precision does not decrease as the deployment
+grows. At a fixed precision $\delta$, the
 inequality gives
 $\sup R_n\ge\sigma^2(\sum_jf_j\sqrt{g_j})^2/\delta^2-\sigma^2\pi^2\sum_jg_j/B^2$.
 The best partition gives at most $\sigma^2(\E\sqrt g)^2/\delta^2$, and that constant
@@ -541,7 +554,8 @@ model-based estimator can do better. A common temperature explores most near the
 boundary, and so does the optimal design, so the location of exploration is not the
 issue. The issue is that the probability of the non-preferred action decays
 exponentially in $|\Delta|$. Confident contexts are then almost never explored unless
-the temperature is raised everywhere, which is expensive near the boundary.
+the temperature is raised everywhere, which increases the loss incurred in contexts
+near the boundary.
 
 \begin{remark}[Mixtures of temperatures]\label{rem:mixture}
 Theorem~\ref{thm:common} does not extend to random mixtures of finite temperatures.
@@ -683,17 +697,18 @@ population effect apply to every estimator.
 %=============================================================================
 \section{Discussion}\label{sec:discussion}
 
-Logs from a sharpening policy are good for one question and poor for another. If we
-want to know how outcomes respond where the policy is indifferent, and deviations cost
-little there, a growing deployment gives increasingly precise inference while the
-exploration loss vanishes. If we want the population average effect, the worst-case
-loss must grow without bound, and a larger deployment does not help. Anyone reporting
-an effect estimated from such logs should therefore say which of the two it is.
+For the boundary effect, when deviations near the boundary have small operational
+cost, a growing deployment under one sharpening temperature gives increasingly precise
+inference while the cumulative exploration loss tends to zero. For the population
+average effect, uniformly consistent estimation requires the worst-case exploration
+loss to diverge, and increasing the deployment size does not remove this lower bound on
+the required loss. A report of an effect estimated from such logs should therefore
+state which of the two quantities it targets.
 
 For design, the question is how to use temperature. With one temperature for all
 contexts, the probability of the non-preferred action falls off exponentially with the
-policy's confidence, so reaching confident contexts requires a temperature that is
-expensive near the boundary. Uniform mixing, context-specific temperatures and
+policy's confidence, so reaching confident contexts requires a higher temperature,
+which increases the loss incurred near the boundary. Uniform mixing, context-specific temperatures and
 mixtures that put a vanishing weight on a moderate temperature all avoid this.
 Allocating by the gap saves a little more when gaps vary; in the example of
 Section~\ref{sec:sims} the saving over uniform mixing is about eleven percent.
